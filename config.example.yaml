@@ -1,0 +1,10 @@
+search:
+  keywords:
+    - software engineer
+    - backend engineer
+
+  remote_only: true
+
+sources:
+  enabled:
+    - remoteok
