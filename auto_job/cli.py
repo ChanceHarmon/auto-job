@@ -115,6 +115,24 @@ def recent(limit: int = 10):
     print_jobs(jobs, limit)
 
 
+def dedupe_jobs(jobs: list[Job]) -> list[Job]:
+    """Remove duplicate jobs by company/title, keeping the highest score."""
+    unique_jobs = {}
+
+    for job in jobs:
+        key = (
+            job.company.lower().strip(),
+            job.title.lower().strip(),
+        )
+
+        existing_job = unique_jobs.get(key)
+
+        if existing_job is None or job.match_score > existing_job.match_score:
+            unique_jobs[key] = job
+
+    return list(unique_jobs.values())
+
+
 @app.command()
 def search():
     """Search enabled job sources, score results, and save matches."""
@@ -139,9 +157,12 @@ def search():
         for job in jobs:
             score = score_job(job, app_config)
             job.match_score = score
+            # print(f"{score} | {job.title} @ {job.company} ({job.source})")
 
             if score >= app_config.filters.minimum_score:
                 all_scored_jobs.append(job)
+
+    all_scored_jobs = dedupe_jobs(all_scored_jobs)
 
     all_scored_jobs.sort(
         key=lambda job: job.match_score,

@@ -1,5 +1,6 @@
 from auto_job.config import AppConfig
 from auto_job.models import Job
+from datetime import date, timedelta
 
 
 def score_job(job: Job, config: AppConfig) -> int:
@@ -23,6 +24,21 @@ def score_job(job: Job, config: AppConfig) -> int:
             job.detected_stack = [f"excluded keyword: {excluded}"]
             return 0
 
+    # Hard exclude non-remote jobs when remote_only is enabled
+    if config.search.remote_only and job.remote_status != "remote":
+        job.match_score = 0
+        job.detected_stack = ["not remote"]
+        return 0
+    
+        # Hard exclude old jobs
+    if job.date_posted:
+        cutoff_date = date.today() - timedelta(days=config.search.recency_days)
+
+        if job.date_posted < cutoff_date:
+            job.match_score = 0
+            job.detected_stack = ["too old"]
+            return 0
+    
     # Keyword matches
     for keyword in config.search.keywords:
         keyword_parts = keyword.lower().split()

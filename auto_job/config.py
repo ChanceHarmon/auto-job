@@ -1,12 +1,15 @@
 from pathlib import Path
 
 import yaml
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class SearchConfig(BaseModel):
-    keywords: list[str]
+    keywords: list[str] = Field(default_factory=list)
+    locations: list[str] = Field(default_factory=list)
     remote_only: bool = True
+    salary_min: int | None = None
+    recency_days: int = 7
 
 class FilterConfig(BaseModel):
     excluded_keywords: list[str] = []
@@ -14,13 +17,22 @@ class FilterConfig(BaseModel):
     minimum_score: int = 40
 
 class SourceConfig(BaseModel):
-    enabled: list[str]
-
+    enabled: list[str] = Field(default_factory=list)
+    rss_feeds: list[RSSFeedConfig] = Field(default_factory=list)
+    greenhouse_boards: list[GreenhouseBoardConfig] = Field(default_factory=list)
 
 class AppConfig(BaseModel):
     search: SearchConfig
     filters: FilterConfig
     sources: SourceConfig
+
+class RSSFeedConfig(BaseModel):
+    name: str
+    url: str
+
+class GreenhouseBoardConfig(BaseModel):
+    company: str
+    board_token: str
 
 
 def load_config(path: str = "config.yaml") -> AppConfig:
