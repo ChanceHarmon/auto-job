@@ -8,7 +8,11 @@ from auto_job.sources.remoteok import RemoteOKSource
 from auto_job.scoring import score_job
 from auto_job.storage import init_db, save_jobs
 from auto_job.storage import get_recent_jobs
-from auto_job.sources.registry import SOURCE_REGISTRY
+from auto_job.job_search import (
+    fetch_jobs_from_sources,
+    score_and_filter_jobs,
+)
+from auto_job.reporting import build_text_report, save_text_report
 
 app = typer.Typer()
 
@@ -69,42 +73,6 @@ def print_jobs(jobs: list[Job], limit: int = 10):
 
 
 @app.command()
-def remoteok():
-    """Fetch and score matching jobs from RemoteOK."""
-    app_config = load_config()
-
-    source = RemoteOKSource(app_config)
-    jobs = source.fetch_jobs()
-
-    scored_jobs = []
-
-    for job in jobs:
-        score = score_job(job, app_config)
-        job.match_score = score
-
-        if score > 0:
-            scored_jobs.append(job)
-
-    scored_jobs.sort(
-        key=lambda job: job.match_score,
-        reverse=True
-    )
-
-    init_db()
-    saved_count = save_jobs(scored_jobs)
-
-    print(f"\nFetched {len(jobs)} jobs from RemoteOK")
-    print(f"Matched {len(scored_jobs)} jobs from your config\n")
-    print(f"Saved {saved_count} new jobs to SQLite\n")
-
-    for job in scored_jobs[:10]:
-        print(f"{job.match_score} | {job.title} @ {job.company}")
-        print(job.posting_url)
-        print(job.detected_stack)
-        print()
-
-
-@app.command()
 def recent(limit: int = 10):
     """Show recent saved jobs."""
 
@@ -138,29 +106,9 @@ def search():
     """Search enabled job sources, score results, and save matches."""
     app_config = load_config()
 
-    all_scored_jobs = []
+    jobs = fetch_jobs_from_sources(app_config)
 
-    for source_name in app_config.sources.enabled:
-        print(f"Searching {source_name}...")
-
-        source_class = SOURCE_REGISTRY.get(source_name)
-
-        if source_class is None:
-            print(f"Unknown source: {source_name}")
-            continue
-
-        source = source_class(app_config)
-        jobs = source.fetch_jobs()
-
-        print(f"Fetched {len(jobs)} jobs from {source_name}")
-
-        for job in jobs:
-            score = score_job(job, app_config)
-            job.match_score = score
-            # print(f"{score} | {job.title} @ {job.company} ({job.source})")
-
-            if score >= app_config.filters.minimum_score:
-                all_scored_jobs.append(job)
+    all_scored_jobs = score_and_filter_jobs(jobs, app_config)
 
     all_scored_jobs = dedupe_jobs(all_scored_jobs)
 
@@ -175,7 +123,14 @@ def search():
     print(f"\nMatched {len(all_scored_jobs)} jobs")
     print(f"Saved {saved_count} new jobs to SQLite\n")
 
-    print_jobs(all_scored_jobs, 10)
+    report = build_text_report(all_scored_jobs)
+
+    print("\nReport Preview:\n")
+    print(report)
+
+    report_path = save_text_report(report)
+
+    print(f"\nSaved report to {report_path}\n")
 
 
 
