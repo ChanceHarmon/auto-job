@@ -11,11 +11,18 @@ def score_job(job: Job, config: AppConfig) -> int:
             job.title or "",
             job.company or "",
             job.location or "",
+            job.remote_status or "",
             job.description or "",
         ]
     ).lower()
 
-    # Keyword matches
+    # Hard exclude unwanted jobs before scoring
+    for excluded in config.filters.excluded_keywords:
+        if excluded.lower() in searchable_text:
+            job.match_score = 0
+            job.detected_stack = [f"excluded keyword: {excluded}"]
+            return 0
+
     # Keyword matches
     for keyword in config.search.keywords:
         keyword_parts = keyword.lower().split()
@@ -26,8 +33,9 @@ def score_job(job: Job, config: AppConfig) -> int:
             if part in searchable_text
         )
 
-        score += matches * 10
-        reasons.append(f"keyword match: {keyword}")
+        if matches > 0:
+            score += matches * 10
+            reasons.append(f"keyword match: {keyword}")
 
         title_matches = sum(
             1
@@ -35,8 +43,9 @@ def score_job(job: Job, config: AppConfig) -> int:
             if part in job.title.lower()
         )
 
-        score += title_matches * 10
-        reasons.append(f"title match: {keyword}")
+        if title_matches > 0:
+            score += title_matches * 10
+            reasons.append(f"title match: {keyword}")
 
     # Preferred stack matches
     for tech in config.filters.preferred_stack:
@@ -47,12 +56,9 @@ def score_job(job: Job, config: AppConfig) -> int:
     # Remote boost
     if job.remote_status == "remote":
         score += 10
+        reasons.append("remote")
 
-    # Excluded keyword penalties
-    for excluded in config.filters.excluded_keywords:
-        if excluded.lower() in searchable_text:
-            score -= 25
-            reasons.append(f"excluded keyword: {excluded}")
-
+    job.match_score = score
     job.detected_stack = reasons
+
     return score

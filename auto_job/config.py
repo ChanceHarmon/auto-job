@@ -11,6 +11,7 @@ class SearchConfig(BaseModel):
 class FilterConfig(BaseModel):
     excluded_keywords: list[str] = []
     preferred_stack: list[str] = []
+    minimum_score: int = 40
 
 class SourceConfig(BaseModel):
     enabled: list[str]
