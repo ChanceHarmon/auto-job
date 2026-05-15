@@ -104,7 +104,28 @@ def detect_ats(url: str):
         print(f"Detected ATS: {result.provider}")
         print(f"Matched pattern: {result.matched_pattern}")
         print(f"ATS URL: {result.ats_url or 'Not found'}")
-        print(f"Board token: {result.board_token or 'Not found'}")
+        print(f"Company slug: {result.company_slug or 'Not found'}")
+
+        if (
+            result.provider == "greenhouse"
+            and result.company_slug
+        ):
+            print("\nConfig snippet:\n")
+
+            print("greenhouse_boards:")
+            print(f"  - company: {result.company_slug.title()}")
+            print(f"    board_token: {result.company_slug}")
+
+        elif (
+            result.provider == "lever"
+            and result.company_slug
+        ):
+            print("\nConfig snippet:\n")
+
+            print("lever_companies:")
+            print(f"  - company: {result.company_slug.title()}")
+            print(f"    company_slug: {result.company_slug}")
+
     else:
         print("No known ATS detected")
 

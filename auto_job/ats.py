@@ -27,29 +27,39 @@ class AtsDetectionResult:
     matched_pattern: str
     final_url: str
     ats_url: str | None = None
-    board_token: str | None = None
+    company_slug: str | None = None
 
 
 def detect_ats_provider(url: str) -> AtsDetectionResult | None:
     """Detect ATS provider from careers page HTML."""
     response = httpx.get(url, follow_redirects=True, timeout=10)
     html = response.text.lower()
+    final_url = str(response.url).lower()
+
+    searchable_text = f"{final_url}\n{html}"
 
     for provider, pattern in ATS_PATTERNS.items():
-        if pattern in html:
-            ats_url = extract_first_matching_url(html, pattern)
+        if pattern in searchable_text:
+            ats_url = extract_first_matching_url(searchable_text, pattern)
 
-            board_token = None
+            if ats_url is None and pattern in final_url:
+                ats_url = str(response.url)
 
-            if provider == "greenhouse" and ats_url:
-                board_token = extract_greenhouse_board_token(ats_url)
+            company_slug = None
+
+            if ats_url:
+                if provider == "greenhouse":
+                    company_slug = extract_greenhouse_board_token(ats_url)
+
+                elif provider == "lever":
+                    company_slug = extract_lever_company_slug(ats_url)
 
             return AtsDetectionResult(
                 provider=provider,
                 matched_pattern=pattern,
                 final_url=str(response.url),
                 ats_url=ats_url,
-                board_token=board_token,
+                company_slug=company_slug,
             )
 
     return None
@@ -59,6 +69,18 @@ def extract_greenhouse_board_token(url: str) -> str | None:
     """Extract Greenhouse board token from URL."""
     match = re.search(
         r"boards\.greenhouse\.io/([a-zA-Z0-9_-]+)",
+        url,
+    )
+
+    if match:
+        return match.group(1)
+
+    return None
+
+def extract_lever_company_slug(url: str) -> str | None:
+    """Extract Lever company slug from URL."""
+    match = re.search(
+        r"jobs\.lever\.co/([a-zA-Z0-9_-]+)",
         url,
     )
 
