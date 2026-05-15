@@ -4,6 +4,14 @@ import re
 from auto_job.models import Job
 from auto_job.sources.base import JobSource
 
+JOB_PATTERN = re.compile(
+    r'"id":"([a-f0-9-]{36})".*?'
+    r'"title":"([^"]+)".*?'
+    r'"locationName":"([^"]*)".*?'
+    r'"workplaceType":"([^"]*)".*?'
+    r'"publishedDate":"([^"]*)"',
+    re.DOTALL,
+)
 
 class AshbySource(JobSource):
 
@@ -31,19 +39,21 @@ class AshbySource(JobSource):
                 print(f"Error fetching Ashby jobs for {company_slug}: {error}")
                 continue
 
-            html = response.text
-
-            html = html.replace("\\/", "/")
-            html = html.replace("&quot;", '"')
-
-            job_pattern = re.compile(
-                r'"title":"([^"]+)".*?"id":"([a-f0-9-]{36})"',
-                re.DOTALL,
+            html = (
+                response.text
+                .replace("\\/", "/")
+                .replace("&quot;", '"')
             )
 
-            matches = job_pattern.findall(html)
+            matches = JOB_PATTERN.findall(html)
 
-            for title, job_id in matches:
+            for job_id, title, location, workplace_type, published_date in matches:
+                remote_status = (
+                    "remote"
+                    if workplace_type.lower() == "remote"
+                    else "onsite"
+                )
+
                 posting_url = f"https://jobs.ashbyhq.com/{company_slug}/{job_id}"
 
                 job = Job(
@@ -51,11 +61,11 @@ class AshbySource(JobSource):
                     title=title,
                     source="ashby",
                     posting_url=posting_url,
-                    location="Unknown",
-                    remote_status="unknown",
+                    location=location,
+                    remote_status=remote_status,
+                    date_posted=published_date,
                     description="",
                 )
-
                 jobs.append(job)
 
         return jobs

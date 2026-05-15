@@ -3,14 +3,11 @@ from rich import print
 
 from auto_job.config import load_config
 from auto_job.models import Job
-from auto_job.sources.demo import DemoSource
 from auto_job.storage import get_recent_jobs
 from auto_job.job_search import run_job_search
 from auto_job.reporting import build_text_report, save_text_report
 from auto_job.ats import detect_ats_provider
 from auto_job.config_writer import add_greenhouse_board
-from auto_job.sources.lever import LeverSource
-from auto_job.config import LeverCompanyConfig
 
 app = typer.Typer()
 
@@ -25,40 +22,6 @@ def config():
     print(f"Keywords: {app_config.search.keywords}")
     print(f"Remote only: {app_config.search.remote_only}")
     print(f"Sources: {app_config.sources.enabled}")
-
-
-@app.command()
-def demo_job():
-    """Create and display a sample normalized job."""
-    job = Job(
-        company="Example Co",
-        title="Backend Engineer",
-        source="demo",
-        posting_url="https://example.com/jobs/backend-engineer",
-        location="Remote",
-        remote_status="remote",
-        description="Python, APIs, PostgreSQL"
-    )
-
-    print(job)
-
-
-@app.command()
-def demo_source():
-    """Fetch jobs from the demo source."""
-    app_config = load_config()
-
-    source = DemoSource(app_config)
-
-    jobs = source.fetch_jobs()
-
-    print(f"\nFetched {len(jobs)} jobs:\n")
-
-    for job in jobs:
-        print(f"{job.title} @ {job.company}")
-        print(f"Source: {job.source}")
-        print(f"URL: {job.posting_url}")
-        print()
 
 
 def print_jobs(jobs: list[Job], limit: int = 10):
@@ -141,26 +104,6 @@ def detect_ats(url: str):
 
     else:
         print("No known ATS detected")
-
-
-@app.command()
-def lever(company_slug: str):
-    """Fetch jobs from one Lever company slug for debugging."""
-    app_config = load_config()
-
-    app_config.sources.lever_companies = [
-        LeverCompanyConfig(
-            company=company_slug.title(),
-            company_slug=company_slug,
-        )
-    ]
-
-    source = LeverSource(app_config)
-    jobs = source.fetch_jobs()
-
-    print(f"Fetched {len(jobs)} Lever jobs")
-
-    print_jobs(jobs, 10)
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
-import httpx
 from dataclasses import dataclass
 import re
+import httpx
 
 
 ATS_PATTERNS = {
@@ -17,6 +17,20 @@ def extract_first_matching_url(html: str, pattern: str) -> str | None:
 
     if match:
         return match.group(0)
+
+    return None
+
+
+def extract_company_slug(provider: str, ats_url: str) -> str | None:
+    """Extract a company slug/token for a supported ATS provider."""
+    if provider == "greenhouse":
+        return extract_greenhouse_board_token(ats_url)
+
+    if provider == "lever":
+        return extract_lever_company_slug(ats_url)
+
+    if provider == "ashby":
+        return extract_ashby_company_slug(ats_url)
 
     return None
 
@@ -45,15 +59,7 @@ def detect_ats_provider(url: str) -> AtsDetectionResult | None:
             if ats_url is None and pattern in final_url:
                 ats_url = str(response.url)
 
-            company_slug = None
-
-            if ats_url:
-                if provider == "greenhouse":
-                    company_slug = extract_greenhouse_board_token(ats_url)
-                elif provider == "lever":
-                    company_slug = extract_lever_company_slug(ats_url)
-                elif provider == "ashby":
-                    company_slug = extract_ashby_company_slug(ats_url)
+            company_slug = extract_company_slug(provider, ats_url) if ats_url else None
 
             return AtsDetectionResult(
                 provider=provider,
@@ -77,6 +83,7 @@ def extract_greenhouse_board_token(url: str) -> str | None:
         return match.group(1)
 
     return None
+
 
 def extract_lever_company_slug(url: str) -> str | None:
     """Extract Lever company slug from URL."""

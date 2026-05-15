@@ -1,13 +1,10 @@
-# auto_job/job_search.py
-
+from dataclasses import dataclass
 from rich import print
 
 from auto_job.sources.registry import SOURCE_REGISTRY
 from auto_job.scoring import score_job
 from auto_job.models import Job
 from auto_job.storage import init_db, save_jobs
-from auto_job.reporting import build_text_report, save_text_report
-from dataclasses import dataclass
 
 
 @dataclass
@@ -16,7 +13,7 @@ class JobSearchResult:
     saved_count: int
 
 
-def fetch_jobs_from_sources(app_config):
+def fetch_jobs_from_sources(app_config) -> list[Job]:
     """Fetch jobs from all enabled sources."""
     all_jobs = []
 
@@ -39,7 +36,7 @@ def fetch_jobs_from_sources(app_config):
     return all_jobs
 
 
-def score_and_filter_jobs(jobs: list[Job], app_config,) -> list[Job]:
+def score_and_filter_jobs(jobs: list[Job], app_config) -> list[Job]:
     """Score jobs and keep matches above minimum score."""
     matched_jobs = []
 
@@ -71,7 +68,7 @@ def dedupe_jobs(jobs: list[Job]) -> list[Job]:
     return list(unique_jobs.values())
 
 
-def run_job_search(app_config) -> list[Job]:
+def run_job_search(app_config) -> JobSearchResult:
     """Run the full job search pipeline."""
     jobs = fetch_jobs_from_sources(app_config)
 
@@ -88,6 +85,6 @@ def run_job_search(app_config) -> list[Job]:
     saved_count = save_jobs(matched_jobs)
 
     return JobSearchResult(
-    jobs=matched_jobs,
-    saved_count=saved_count,
+        jobs=matched_jobs,
+        saved_count=saved_count,
     )
