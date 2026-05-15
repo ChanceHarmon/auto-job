@@ -21,6 +21,7 @@ class SourceConfig(BaseModel):
     rss_feeds: list[RSSFeedConfig] = Field(default_factory=list)
     greenhouse_boards: list[GreenhouseBoardConfig] = Field(default_factory=list)
     lever_companies: list[LeverCompanyConfig] = Field(default_factory=list)
+    ashby_companies: list[AshbyCompanyConfig] = Field(default_factory=list)
 
 class AppConfig(BaseModel):
     search: SearchConfig
@@ -36,6 +37,10 @@ class GreenhouseBoardConfig(BaseModel):
     board_token: str
 
 class LeverCompanyConfig(BaseModel):
+    company: str
+    company_slug: str
+
+class AshbyCompanyConfig(BaseModel):
     company: str
     company_slug: str
 
