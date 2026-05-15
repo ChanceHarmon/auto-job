@@ -4,10 +4,10 @@ from rich import print
 from auto_job.config import load_config
 from auto_job.models import Job
 from auto_job.sources.demo import DemoSource
-from auto_job.storage import init_db, save_jobs
 from auto_job.storage import get_recent_jobs
 from auto_job.job_search import run_job_search
 from auto_job.reporting import build_text_report, save_text_report
+from auto_job.ats import detect_ats_provider
 
 app = typer.Typer()
 
@@ -94,6 +94,19 @@ def search():
 
     save_text_report(report)
 
+
+@app.command()
+def detect_ats(url: str):
+    """Detect ATS provider from a careers page."""
+    result = detect_ats_provider(url)
+
+    if result:
+        print(f"Detected ATS: {result.provider}")
+        print(f"Matched pattern: {result.matched_pattern}")
+        print(f"ATS URL: {result.ats_url or 'Not found'}")
+        print(f"Board token: {result.board_token or 'Not found'}")
+    else:
+        print("No known ATS detected")
 
 
 if __name__ == "__main__":
