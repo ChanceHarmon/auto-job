@@ -37,3 +37,57 @@ def add_greenhouse_board(
         )
 
     return True
+
+
+def add_ashby_company(
+    config_path: str,
+    company: str,
+    company_slug: str,
+) -> bool:
+    """Add an Ashby company if it does not already exist."""
+
+    with open(config_path, "r", encoding="utf-8") as file:
+        config_data = yaml.safe_load(file)
+
+    companies = config_data["sources"].setdefault(
+        "ashby_companies",
+        []
+    )
+
+    already_exists = any(
+        existing["company_slug"] == company_slug
+        for existing in companies
+    )
+
+    if already_exists:
+        return False
+
+    companies.append({
+        "company": company,
+        "company_slug": company_slug,
+    })
+
+    with open(config_path, "w", encoding="utf-8") as file:
+        yaml.safe_dump(
+            config_data,
+            file,
+            sort_keys=False,
+        )
+
+    return True
+
+
+def add_provider_source(
+    config_path: str,
+    provider: str,
+    company_slug: str,
+) -> bool:
+    """Add a detected ATS source to config.yaml."""
+
+    if provider == "greenhouse":
+        return add_greenhouse_board(config_path, company_slug.title(), company_slug)
+
+    if provider == "ashby":
+        return add_ashby_company(config_path, company_slug.title(), company_slug)
+
+    return False

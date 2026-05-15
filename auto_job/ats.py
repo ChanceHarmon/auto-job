@@ -44,11 +44,11 @@ class AtsDetectionResult:
     company_slug: str | None = None
 
 
-def detect_ats_provider(url: str) -> AtsDetectionResult | None:
-    """Detect ATS provider from careers page HTML."""
-    response = httpx.get(url, follow_redirects=True, timeout=10)
-    html = response.text.lower()
-    final_url = str(response.url).lower()
+def detect_ats_from_text(
+    html: str,
+    final_url: str,
+) -> AtsDetectionResult | None:
+    """Detect ATS provider from HTML and final URL text."""
 
     searchable_text = f"{final_url}\n{html}"
 
@@ -57,19 +57,34 @@ def detect_ats_provider(url: str) -> AtsDetectionResult | None:
             ats_url = extract_first_matching_url(searchable_text, pattern)
 
             if ats_url is None and pattern in final_url:
-                ats_url = str(response.url)
+                ats_url = final_url
 
             company_slug = extract_company_slug(provider, ats_url) if ats_url else None
 
             return AtsDetectionResult(
                 provider=provider,
                 matched_pattern=pattern,
-                final_url=str(response.url),
+                final_url=final_url,
                 ats_url=ats_url,
                 company_slug=company_slug,
             )
 
     return None
+
+
+def detect_ats_provider(url: str) -> AtsDetectionResult | None:
+    """Detect ATS provider from careers page HTML."""
+
+    response = httpx.get(
+        url,
+        follow_redirects=True,
+        timeout=10,
+    )
+
+    return detect_ats_from_text(
+        response.text.lower(),
+        str(response.url).lower(),
+    )
 
 
 def extract_greenhouse_board_token(url: str) -> str | None:
