@@ -8,6 +8,7 @@ from auto_job.storage import get_recent_jobs
 from auto_job.job_search import run_job_search
 from auto_job.reporting import build_text_report, save_text_report
 from auto_job.ats import detect_ats_provider
+from auto_job.config_writer import add_greenhouse_board
 
 app = typer.Typer()
 
@@ -115,6 +116,16 @@ def detect_ats(url: str):
             print("greenhouse_boards:")
             print(f"  - company: {result.company_slug.title()}")
             print(f"    board_token: {result.company_slug}")
+            added = add_greenhouse_board(
+                "config.yaml",
+                result.company_slug.title(),
+                result.company_slug,
+            )
+
+            if added:
+                print("\nAdded board to config.yaml")
+            else:
+                print("\nBoard already exists in config.yaml")
 
         elif (
             result.provider == "lever"
