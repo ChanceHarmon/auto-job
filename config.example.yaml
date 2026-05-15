@@ -8,3 +8,10 @@ search:
 sources:
   enabled:
     - remoteok
+    - rss
+    - greenhouse
+    - lever
+
+  lever_companies:
+    - company: Netlify
+      company_slug: netlify

@@ -20,6 +20,7 @@ class SourceConfig(BaseModel):
     enabled: list[str] = Field(default_factory=list)
     rss_feeds: list[RSSFeedConfig] = Field(default_factory=list)
     greenhouse_boards: list[GreenhouseBoardConfig] = Field(default_factory=list)
+    lever_companies: list[LeverCompanyConfig] = Field(default_factory=list)
 
 class AppConfig(BaseModel):
     search: SearchConfig
@@ -33,6 +34,10 @@ class RSSFeedConfig(BaseModel):
 class GreenhouseBoardConfig(BaseModel):
     company: str
     board_token: str
+
+class LeverCompanyConfig(BaseModel):
+    company: str
+    company_slug: str
 
 
 def load_config(path: str = "config.yaml") -> AppConfig:

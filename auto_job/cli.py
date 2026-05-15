@@ -9,6 +9,8 @@ from auto_job.job_search import run_job_search
 from auto_job.reporting import build_text_report, save_text_report
 from auto_job.ats import detect_ats_provider
 from auto_job.config_writer import add_greenhouse_board
+from auto_job.sources.lever import LeverSource
+from auto_job.config import LeverCompanyConfig
 
 app = typer.Typer()
 
@@ -107,10 +109,7 @@ def detect_ats(url: str):
         print(f"ATS URL: {result.ats_url or 'Not found'}")
         print(f"Company slug: {result.company_slug or 'Not found'}")
 
-        if (
-            result.provider == "greenhouse"
-            and result.company_slug
-        ):
+        if result.provider == "greenhouse" and result.company_slug:
             print("\nConfig snippet:\n")
 
             print("greenhouse_boards:")
@@ -127,18 +126,41 @@ def detect_ats(url: str):
             else:
                 print("\nBoard already exists in config.yaml")
 
-        elif (
-            result.provider == "lever"
-            and result.company_slug
-        ):
+        elif result.provider == "lever" and result.company_slug:
             print("\nConfig snippet:\n")
 
             print("lever_companies:")
             print(f"  - company: {result.company_slug.title()}")
             print(f"    company_slug: {result.company_slug}")
+        elif result.provider == "ashby" and result.company_slug:
+            print("\nConfig snippet:\n")
+
+            print("ashby_companies:")
+            print(f"  - company: {result.company_slug.title()}")
+            print(f"    company_slug: {result.company_slug}")
 
     else:
         print("No known ATS detected")
+
+
+@app.command()
+def lever(company_slug: str):
+    """Fetch jobs from one Lever company slug for debugging."""
+    app_config = load_config()
+
+    app_config.sources.lever_companies = [
+        LeverCompanyConfig(
+            company=company_slug.title(),
+            company_slug=company_slug,
+        )
+    ]
+
+    source = LeverSource(app_config)
+    jobs = source.fetch_jobs()
+
+    print(f"Fetched {len(jobs)} Lever jobs")
+
+    print_jobs(jobs, 10)
 
 
 if __name__ == "__main__":

@@ -12,7 +12,7 @@ ATS_PATTERNS = {
 
 def extract_first_matching_url(html: str, pattern: str) -> str | None:
     """Extract the first URL containing the matched ATS pattern."""
-    url_pattern = rf"https?://[^\"'\s<>]*{re.escape(pattern)}[^\"'\s<>]*"
+    url_pattern = rf"https?://[^\"'\s<>&]*{re.escape(pattern)}[^\"'\s<>&]*"
     match = re.search(url_pattern, html)
 
     if match:
@@ -50,9 +50,10 @@ def detect_ats_provider(url: str) -> AtsDetectionResult | None:
             if ats_url:
                 if provider == "greenhouse":
                     company_slug = extract_greenhouse_board_token(ats_url)
-
                 elif provider == "lever":
                     company_slug = extract_lever_company_slug(ats_url)
+                elif provider == "ashby":
+                    company_slug = extract_ashby_company_slug(ats_url)
 
             return AtsDetectionResult(
                 provider=provider,
@@ -81,6 +82,19 @@ def extract_lever_company_slug(url: str) -> str | None:
     """Extract Lever company slug from URL."""
     match = re.search(
         r"jobs\.lever\.co/([a-zA-Z0-9_-]+)",
+        url,
+    )
+
+    if match:
+        return match.group(1)
+
+    return None
+
+
+def extract_ashby_company_slug(url: str) -> str | None:
+    """Extract Ashby company slug from URL."""
+    match = re.search(
+        r"jobs\.ashbyhq\.com/([a-zA-Z0-9_-]+)",
         url,
     )
 
