@@ -4,14 +4,9 @@ from rich import print
 from auto_job.config import load_config
 from auto_job.models import Job
 from auto_job.sources.demo import DemoSource
-from auto_job.sources.remoteok import RemoteOKSource
-from auto_job.scoring import score_job
 from auto_job.storage import init_db, save_jobs
 from auto_job.storage import get_recent_jobs
-from auto_job.job_search import (
-    fetch_jobs_from_sources,
-    score_and_filter_jobs,
-)
+from auto_job.job_search import run_job_search
 from auto_job.reporting import build_text_report, save_text_report
 
 app = typer.Typer()
@@ -83,54 +78,21 @@ def recent(limit: int = 10):
     print_jobs(jobs, limit)
 
 
-def dedupe_jobs(jobs: list[Job]) -> list[Job]:
-    """Remove duplicate jobs by company/title, keeping the highest score."""
-    unique_jobs = {}
-
-    for job in jobs:
-        key = (
-            job.company.lower().strip(),
-            job.title.lower().strip(),
-        )
-
-        existing_job = unique_jobs.get(key)
-
-        if existing_job is None or job.match_score > existing_job.match_score:
-            unique_jobs[key] = job
-
-    return list(unique_jobs.values())
-
-
 @app.command()
 def search():
     """Search enabled job sources, score results, and save matches."""
     app_config = load_config()
 
-    jobs = fetch_jobs_from_sources(app_config)
+    result = run_job_search(app_config)
 
-    all_scored_jobs = score_and_filter_jobs(jobs, app_config)
+    print(f"\nMatched {len(result.jobs)} jobs")
+    print(f"Saved {result.saved_count} new jobs to SQLite\n")
 
-    all_scored_jobs = dedupe_jobs(all_scored_jobs)
+    print_jobs(result.jobs, 10)
 
-    all_scored_jobs.sort(
-        key=lambda job: job.match_score,
-        reverse=True
-    )
+    report = build_text_report(result.jobs)
 
-    init_db()
-    saved_count = save_jobs(all_scored_jobs)
-
-    print(f"\nMatched {len(all_scored_jobs)} jobs")
-    print(f"Saved {saved_count} new jobs to SQLite\n")
-
-    report = build_text_report(all_scored_jobs)
-
-    print("\nReport Preview:\n")
-    print(report)
-
-    report_path = save_text_report(report)
-
-    print(f"\nSaved report to {report_path}\n")
+    save_text_report(report)
 
 
 

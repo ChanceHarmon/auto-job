@@ -7,15 +7,22 @@ from auto_job.models import Job
 def build_text_report(jobs: list[Job], limit: int = 10) -> str:
     lines = []
 
-    lines.append("auto-job report")
-    lines.append("")
-    lines.append(f"Showing top {min(len(jobs), limit)} of {len(jobs)} matched jobs")
+    lines.append("=" * 50)
+    lines.append("AUTO-JOB REPORT")
+    lines.append("=" * 50)
     lines.append("")
 
     for job in jobs[:limit]:
         lines.append(f"{job.match_score} | {job.title} @ {job.company}")
-        lines.append(f"{job.source} | {job.location or 'Unknown location'} | {job.remote_status or 'Unknown remote status'}")
-        lines.append(str(job.posting_url) if job.posting_url else "No URL")
+        lines.append(f"Source: {job.source}")
+
+        if job.location:
+            lines.append(f"Location: {job.location}")
+
+        if job.remote_status:
+            lines.append(f"Remote: {job.remote_status}")
+
+        lines.append(str(job.posting_url))
         lines.append("")
 
     return "\n".join(lines)
