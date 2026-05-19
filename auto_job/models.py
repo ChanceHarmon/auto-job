@@ -16,4 +16,5 @@ class Job(BaseModel):
     description: str | None = None
 
     detected_stack: list[str] = Field(default_factory=list)
+    match_reasons: list[str] = Field(default_factory=list)
     match_score: int = 0

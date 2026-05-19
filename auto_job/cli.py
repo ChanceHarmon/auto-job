@@ -8,7 +8,8 @@ from auto_job.job_search import run_job_search
 from auto_job.reporting import build_text_report, save_text_report
 from auto_job.ats import detect_ats_provider
 from auto_job.config_writer import add_provider_source
-from auto_job.discovery import discover_ats_from_job_urls
+from auto_job.discovery import discover_ats_from_job_urls, get_discovery_urls_from_jobs
+from auto_job.sources.rss import RSSSource
 
 app = typer.Typer()
 
@@ -122,7 +123,7 @@ def discover_ats(urls: list[str], write: bool = False):
         print(f"\nDetected ATS: {result.provider}")
         print(f"ATS URL: {result.ats_url or 'Not found'}")
         print(f"Company slug: {result.company_slug or 'Not found'}")
-        
+
         if write and result.company_slug:
             added = add_provider_source("config.yaml", result.provider, result.company_slug)
 
@@ -130,6 +131,51 @@ def discover_ats(urls: list[str], write: bool = False):
                 print("Added source to config.yaml")
             else:
                 print("Source already exists or unsupported provider")
+
+
+
+@app.command()
+def discover_from_rss(write: bool = False):
+    """Discover ATS providers from configured RSS job URLs."""
+
+    app_config = load_config("config.yaml")
+    rss_source = RSSSource(app_config)
+
+    jobs = rss_source.fetch_jobs()
+    print(f"Fetched {len(jobs)} RSS jobs")
+
+    urls = get_discovery_urls_from_jobs(jobs)
+    print(f"Extracted {len(urls)} URLs")
+
+    results = discover_ats_from_job_urls(urls)
+    print(f"Discovered {len(results)} ATS providers")
+
+    if not results:
+        print("No ATS providers discovered from RSS jobs")
+        return
+
+    added_count = 0
+    skipped_count = 0
+
+    for result in results:
+        print(f"\nDetected ATS: {result.provider}")
+        print(f"ATS URL: {result.ats_url or 'Not found'}")
+        print(f"Company slug: {result.company_slug or 'Not found'}")
+
+        if write and result.company_slug:
+            added = add_provider_source("config.yaml", result.provider, result.company_slug)
+
+            if added:
+                added_count += 1
+                print("Added source to config.yaml")
+            else:
+                skipped_count += 1
+                print("Source already exists or unsupported provider")
+
+    if write:
+        print(f"\nAdded {added_count} new sources")
+        print(f"Skipped {skipped_count} existing/unsupported sources")
+
 
 
 if __name__ == "__main__":

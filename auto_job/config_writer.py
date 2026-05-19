@@ -1,5 +1,40 @@
 import yaml
 
+def build_greenhouse_board_config(
+    company: str,
+    board_token: str,
+    discovered_via: str | None = None,
+) -> dict:
+    """Build a normalized Greenhouse config entry."""
+
+    config = {
+        "company": company,
+        "board_token": board_token,
+    }
+
+    if discovered_via:
+        config["discovered_via"] = discovered_via
+
+    return config
+
+
+def build_ashby_company_config(
+    company: str,
+    company_slug: str,
+    discovered_via: str | None = None,
+) -> dict:
+    """Build a normalized Ashby config entry."""
+
+    config = {
+        "company": company,
+        "company_slug": company_slug,
+    }
+
+    if discovered_via:
+        config["discovered_via"] = discovered_via
+
+    return config
+
 
 def add_greenhouse_board(
     config_path: str,
@@ -24,10 +59,13 @@ def add_greenhouse_board(
     if already_exists:
         return False
 
-    boards.append({
-        "company": company,
-        "board_token": board_token,
-    })
+    boards.append(
+        build_greenhouse_board_config(
+            company,
+            board_token,
+            discovered_via="rss",
+        )
+    )
 
     with open(config_path, "w", encoding="utf-8") as file:
         yaml.safe_dump(
@@ -62,10 +100,13 @@ def add_ashby_company(
     if already_exists:
         return False
 
-    companies.append({
-        "company": company,
-        "company_slug": company_slug,
-    })
+    companies.append(
+        build_ashby_company_config(
+            company,
+            company_slug,
+            discovered_via="rss",
+        )
+    )
 
     with open(config_path, "w", encoding="utf-8") as file:
         yaml.safe_dump(
