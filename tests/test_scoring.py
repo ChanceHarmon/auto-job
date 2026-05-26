@@ -19,6 +19,8 @@ def test_excluded_keyword_returns_zero_score():
     score = score_job(job, app_config)
 
     assert score == 0
+    assert job.detected_stack == []
+    assert "excluded keyword: senior" in job.match_reasons
 
 
 def test_onsite_job_returns_zero_when_remote_only_enabled():
@@ -37,6 +39,8 @@ def test_onsite_job_returns_zero_when_remote_only_enabled():
     score = score_job(job, app_config)
 
     assert score == 0
+    assert job.detected_stack == []
+    assert "not remote" in job.match_reasons
 
 
 def test_matching_remote_job_gets_positive_score():
@@ -55,3 +59,5 @@ def test_matching_remote_job_gets_positive_score():
     score = score_job(job, app_config)
 
     assert score > 0
+    assert "python" in job.detected_stack
+    assert "preferred stack: python" in job.match_reasons

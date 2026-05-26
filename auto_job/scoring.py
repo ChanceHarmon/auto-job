@@ -6,6 +6,7 @@ from datetime import date, timedelta
 def score_job(job: Job, config: AppConfig) -> int:
     score = 0
     reasons = []
+    detected_stack = []
 
     searchable_text = " ".join(
         [
@@ -21,13 +22,13 @@ def score_job(job: Job, config: AppConfig) -> int:
     for excluded in config.filters.excluded_keywords:
         if excluded.lower() in searchable_text:
             job.match_score = 0
-            job.detected_stack = [f"excluded keyword: {excluded}"]
+            job.match_reasons= [f"excluded keyword: {excluded}"]
             return 0
 
     # Hard exclude non-remote jobs when remote_only is enabled
     if config.search.remote_only and job.remote_status != "remote":
         job.match_score = 0
-        job.detected_stack = ["not remote"]
+        job.match_reasons = ["not remote"]
         return 0
     
         # Hard exclude old jobs
@@ -36,7 +37,7 @@ def score_job(job: Job, config: AppConfig) -> int:
 
         if job.date_posted < cutoff_date:
             job.match_score = 0
-            job.detected_stack = ["too old"]
+            job.match_reasons = ["too old"]
             return 0
     
     # Keyword matches
@@ -67,6 +68,7 @@ def score_job(job: Job, config: AppConfig) -> int:
     for tech in config.filters.preferred_stack:
         if tech.lower() in searchable_text:
             score += 5
+            detected_stack.append(tech)
             reasons.append(f"preferred stack: {tech}")
 
     # Remote boost
@@ -75,6 +77,7 @@ def score_job(job: Job, config: AppConfig) -> int:
         reasons.append("remote")
 
     job.match_score = score
-    job.detected_stack = reasons
+    job.detected_stack = detected_stack
+    job.match_reasons = reasons
 
     return score

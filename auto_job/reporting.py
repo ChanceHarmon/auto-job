@@ -1,7 +1,21 @@
 from datetime import datetime
 from pathlib import Path
+from html import unescape
+import re
 
 from auto_job.models import Job
+
+DESCRIPTION_PREVIEW_LENGTH = 500
+
+
+def clean_description(description: str) -> str:
+    """Convert HTML-ish job descriptions into readable plain text."""
+
+    description = unescape(description)
+    description = re.sub(r"<[^>]+>", " ", description)
+    description = " ".join(description.split())
+
+    return description
 
 
 def build_text_report(jobs: list[Job], limit: int = 10) -> str:
@@ -21,6 +35,20 @@ def build_text_report(jobs: list[Job], limit: int = 10) -> str:
 
         if job.remote_status:
             lines.append(f"Remote: {job.remote_status}")
+
+        if job.detected_stack:
+            lines.append(f"Detected stack: {', '.join(job.detected_stack)}")
+
+        if job.match_reasons:
+            lines.append(f"Match reasons: {', '.join(job.match_reasons)}")
+
+        if job.description:
+            description = clean_description(job.description)
+
+            if len(description) > DESCRIPTION_PREVIEW_LENGTH:
+                description = description[:DESCRIPTION_PREVIEW_LENGTH] + "..."
+
+            lines.append(f"Description: {description}")
 
         lines.append(str(job.posting_url))
         lines.append("")
