@@ -1,7 +1,23 @@
 import feedparser
+from datetime import date
 
 from auto_job.models import Job
 from auto_job.sources.base import JobSource
+
+
+def parse_rss_entry_date(entry) -> date | None:
+    """Parse a date from common RSS/Atom date fields."""
+
+    parsed_date = entry.get("published_parsed") or entry.get("updated_parsed")
+
+    if not parsed_date:
+        return None
+
+    return date(
+        parsed_date.tm_year,
+        parsed_date.tm_mon,
+        parsed_date.tm_mday,
+    )
 
 
 class RSSSource(JobSource):
@@ -32,6 +48,7 @@ class RSSSource(JobSource):
                         posting_url=entry.get("link"),
                         location="Remote",
                         remote_status="remote",
+                        date_posted=parse_rss_entry_date(entry),
                         description=entry.get("summary", ""),
                     )
 

@@ -1,17 +1,28 @@
 search:
   keywords:
-    - software engineer
     - backend engineer
+    - software engineer
+    - python developer
 
   remote_only: true
+  salary_min: 95000
+  recency_days: 7
+
+filters:
+  minimum_score: 40
+
+  excluded_keywords:
+    - senior
+    - staff
+    - principal
+
+  preferred_stack:
+    - python
+    - django
+    - postgresql
 
 sources:
   enabled:
-    - remoteok
     - rss
     - greenhouse
-    - lever
-
-  lever_companies:
-    - company: Netlify
-      company_slug: netlify
+    - ashby

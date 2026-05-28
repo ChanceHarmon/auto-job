@@ -36,6 +36,11 @@ def build_text_report(jobs: list[Job], limit: int = 10) -> str:
         if job.remote_status:
             lines.append(f"Remote: {job.remote_status}")
 
+        if job.date_posted:
+            lines.append(f"Date posted: {job.date_posted}")
+        else:
+            lines.append("Date posted: unknown")
+
         if job.detected_stack:
             lines.append(f"Detected stack: {', '.join(job.detected_stack)}")
 
