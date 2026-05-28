@@ -10,6 +10,7 @@ from auto_job.ats import detect_ats_provider
 from auto_job.config_writer import add_provider_source
 from auto_job.discovery import discover_ats_from_job_urls, get_discovery_urls_from_jobs
 from auto_job.sources.rss import RSSSource
+from auto_job.emailer import send_report_email
 
 app = typer.Typer()
 
@@ -78,7 +79,10 @@ def search():
 
     report = build_text_report(result.jobs)
 
-    save_text_report(report)
+    report_path = save_text_report(report)
+    print(f"\nSaved report to {report_path}")
+
+    send_report_email(report, app_config)
 
 
 @app.command()

@@ -16,18 +16,6 @@ class FilterConfig(BaseModel):
     preferred_stack: list[str] = []
     minimum_score: int = 40
 
-class SourceConfig(BaseModel):
-    enabled: list[str] = Field(default_factory=list)
-    rss_feeds: list[RSSFeedConfig] = Field(default_factory=list)
-    greenhouse_boards: list[GreenhouseBoardConfig] = Field(default_factory=list)
-    lever_companies: list[LeverCompanyConfig] = Field(default_factory=list)
-    ashby_companies: list[AshbyCompanyConfig] = Field(default_factory=list)
-
-class AppConfig(BaseModel):
-    search: SearchConfig
-    filters: FilterConfig
-    sources: SourceConfig
-
 class RSSFeedConfig(BaseModel):
     name: str
     url: str
@@ -43,6 +31,28 @@ class LeverCompanyConfig(BaseModel):
 class AshbyCompanyConfig(BaseModel):
     company: str
     company_slug: str
+
+class SourceConfig(BaseModel):
+    enabled: list[str] = Field(default_factory=list)
+    rss_feeds: list[RSSFeedConfig] = Field(default_factory=list)
+    greenhouse_boards: list[GreenhouseBoardConfig] = Field(default_factory=list)
+    lever_companies: list[LeverCompanyConfig] = Field(default_factory=list)
+    ashby_companies: list[AshbyCompanyConfig] = Field(default_factory=list)
+
+class EmailConfig(BaseModel):
+    enabled: bool = False
+    to: str | None = None
+    from_email: str | None = None
+    smtp_host: str = "smtp.gmail.com"
+    smtp_port: int = 587
+
+
+
+class AppConfig(BaseModel):
+    search: SearchConfig
+    filters: FilterConfig
+    sources: SourceConfig
+    email: EmailConfig = Field(default_factory=EmailConfig)
 
 
 def load_config(path: str = "config.yaml") -> AppConfig:

@@ -2,67 +2,71 @@
 
 A semi-automated job search assistant built with Python.
 
-`auto-job` searches job sources, normalizes job postings into a shared format, scores them against configurable preferences, and stores matching results locally for review.
+`auto-job` searches and discovers job sources, normalizes postings into a shared internal model, scores them against configurable preferences, stores results locally, and generates reports/email summaries.
 
-This project is focused on backend architecture, APIs, automation, data normalization, and practical job-search tooling.
+The project focuses on practical backend engineering concepts including:
 
-## Goals
-
-The long-term goal is to build a workflow that can:
-
-*   Search multiple job sources
-*   Normalize job posting data
-*   Score and rank jobs against user preferences
-*   Filter out unwanted roles
-*   Store results locally
-*   Generate reports or email summaries
+- API integration
+- Data normalization
+- ATS discovery
+- Scoring/ranking systems
+- Local persistence
+- Automation workflows
+- CLI application architecture
 
 Important:
 
-*   This project does **not** automatically apply to jobs
-*   Browser automation is intentionally avoided for now
-*   Preference is given to APIs, RSS feeds, and lightweight respectful scraping
+- `auto-job` does **not** automatically apply to jobs
+- Browser automation is intentionally avoided
+- Preference is given to APIs, RSS feeds, ATS boards, and lightweight respectful scraping
 
-* * *
+---
 
-# Current Features
+# Features
 
-## YAML Configuration
+## Multi-Source Job Ingestion
 
-Uses:
+Current supported sources:
 
-*   PyYAML
-*   Pydantic
+- RSS feeds
+- RemoteOK API
+- Greenhouse boards
+- Ashby boards
+- Lever support (partial/in progress)
 
-Configuration supports:
+The system normalizes heterogeneous job data into a shared internal `Job` model.
 
-*   Search keywords
-*   Preferred locations
-*   Remote-only filtering
-*   Salary minimums
-*   Recency filtering
-*   Excluded keywords
-*   Preferred technology stack
-*   Enabled sources
-*   Placeholder email settings
+---
 
-Example:
+## ATS Discovery Pipeline
 
+One of the core goals of the project is reducing the manual work required to discover job sources.
+
+`auto-job` can:
+
+- Detect ATS providers from job URLs/career pages
+- Extract provider-specific identifiers
+- Register discovered sources into configuration
+- Expand source coverage from existing RSS feeds
+
+Current ATS detection support:
+
+- Greenhouse
+- Ashby
+- Lever
+
+Example discovery flow:
+
+```text
+RSS feed
+→ job posting URL
+→ ATS detection
+→ provider extraction
+→ config registration
+→ direct ATS ingestion
 ```
-search:
-  keywords:
-    - backend engineer
-    - software engineer
 
-filters:
-  minimum_score: 40
-
-  excluded_keywords:
-    - senior
-    - staff
-```
-
-* * *
+---
 
 ## Normalized Job Model
 
@@ -70,210 +74,367 @@ All external job data is converted into a shared internal `Job` model.
 
 Current fields include:
 
-*   company
-*   title
-*   source
-*   posting\_url
-*   location
-*   remote\_status
-*   salary
-*   date\_posted
-*   description
-*   detected\_stack
-*   match\_score
+- company
+- title
+- source
+- posting_url
+- location
+- remote_status
+- salary
+- date_posted
+- description
+- detected_stack
+- match_reasons
+- match_score
 
-This creates a normalization boundary between external job sources and internal application logic.
+This creates a normalization boundary between external providers and internal application logic.
 
-* * *
+---
 
-## Source Adapter Architecture
+## Configurable Scoring System
 
-Each source implements a shared abstract interface.
+Jobs are scored using configurable heuristics including:
 
-Current structure:
+- Keyword matches
+- Title matches
+- Preferred technology stack
+- Remote status
 
+Hard filters include:
+
+- Excluded keywords
+- Remote-only filtering
+- Recency filtering
+
+Example excluded roles:
+
+- senior
+- staff
+- principal
+- architect
+- manager
+
+The scoring system intentionally favors transparency and explainability over opaque ranking algorithms.
+
+Example output:
+
+```text
+Detected stack: python, postgresql, api
+Match reasons: keyword match: backend engineer, preferred stack: python, remote
 ```
-sources/
-├── base.py
-├── demo.py
-├── registry.py
-└── remoteok.py
-```
 
-Current source support:
-
-*   RemoteOK API
-
-The architecture is designed so additional adapters can be added later with minimal changes to the rest of the system.
-
-* * *
-
-## Scoring System
-
-Jobs are scored based on:
-
-*   Keyword matches
-*   Title matches
-*   Preferred technology stack
-*   Remote status
-
-Jobs containing excluded keywords are rejected before scoring.
-
-Examples of excluded roles:
-
-*   senior
-*   staff
-*   principal
-*   architect
-*   manager
-
-The scoring system is intentionally heuristic-based and configurable.
-
-* * *
+---
 
 ## SQLite Persistence
 
 Jobs are stored locally using SQLite.
 
-Current implementation uses Python's built-in `sqlite3` module.
-
 Features include:
 
-*   Database initialization
-*   Batch saving
-*   Deduplication
-*   Recent job retrieval
+- Database initialization
+- Batch inserts
+- Deduplication
+- Recent job retrieval
 
-Deduplication is currently handled with:
+Current deduplication strategy:
 
-    UNIQUE(posting_url)
-
-* * *
-
-## CLI Commands
-
-The project currently uses Typer for the command-line interface.
-
-Available commands:
-
+```sql
+UNIQUE(posting_url)
 ```
+
+---
+
+## Report Generation
+
+`auto-job` generates readable text reports containing:
+
+- Match scores
+- Source information
+- Stack detection
+- Match reasoning
+- Cleaned job descriptions
+- Direct application links
+
+Reports are automatically saved to:
+
+```text
+reports/
+```
+
+---
+
+## Email Reports
+
+Generated reports can be emailed directly using SMTP.
+
+Current implementation supports:
+
+- Gmail SMTP
+- `.env`-based credential loading
+- Plain text email delivery
+
+---
+
+## Automated Discovery from RSS
+
+RSS feeds are not only used for job ingestion, but also for ATS discovery.
+
+Example:
+
+```bash
+python -m auto_job.cli discover-from-rss --write
+```
+
+This can:
+
+- Extract posting URLs from RSS feeds
+- Detect ATS providers
+- Deduplicate discoveries
+- Automatically register new providers into `config.yaml`
+
+---
+
+# CLI Commands
+
+Primary commands:
+
+```bash
 python -m auto_job.cli config
-python -m auto_job.cli demo-job
-python -m auto_job.cli demo-source
-python -m auto_job.cli remoteok
 python -m auto_job.cli recent
 python -m auto_job.cli search
+python -m auto_job.cli detect-ats <url>
+python -m auto_job.cli discover-ats <urls>
+python -m auto_job.cli discover-from-rss
 ```
 
 Primary workflow:
 
-`python -m auto_job.cli search`
+```bash
+python -m auto_job.cli search
+```
 
-* * *
+---
+
+# Example Search Pipeline
+
+```text
+Configured sources
+→ fetch jobs
+→ normalize data
+→ score/filter jobs
+→ dedupe results
+→ save to SQLite
+→ generate report
+→ email report
+```
+
+---
 
 # Tech Stack
 
-*   Python
-*   Typer
-*   Pydantic
-*   PyYAML
-*   HTTPX
-*   SQLite
-*   Rich
+- Python
+- Typer
+- Pydantic
+- PyYAML
+- HTTPX
+- SQLite
+- feedparser
+- Rich
+- pytest
+- python-dotenv
 
-* * *
+---
 
 # Project Structure
 
-```
+```text
 auto-job/
-│
 ├── auto_job/
+│   ├── ats.py
 │   ├── cli.py
 │   ├── config.py
+│   ├── config_writer.py
+│   ├── discovery.py
+│   ├── emailer.py
+│   ├── job_search.py
 │   ├── models.py
+│   ├── reporting.py
 │   ├── scoring.py
 │   ├── storage.py
-│   │
 │   └── sources/
+│       ├── ashby.py
 │       ├── base.py
-│       ├── demo.py
+│       ├── greenhouse.py
+│       ├── lever.py
 │       ├── registry.py
-│       └── remoteok.py
-│
-├── README.md
+│       ├── remoteok.py
+│       └── rss.py
+├── reports/
+├── tests/
 ├── config.example.yaml
-└── auto_job.db
+├── config.yaml
+├── auto_job.db
+├── requirements.txt
+└── README.md
 ```
 
-* * *
+---
+
+# Configuration
+
+Example:
+
+```yaml
+search:
+  keywords:
+    - backend engineer
+    - software engineer
+    - python developer
+
+  remote_only: true
+  salary_min: 95000
+  recency_days: 7
+
+filters:
+  minimum_score: 40
+
+  excluded_keywords:
+    - senior
+    - staff
+    - principal
+
+  preferred_stack:
+    - python
+    - django
+    - postgresql
+
+sources:
+  enabled:
+    - rss
+    - greenhouse
+    - ashby
+```
+
+---
 
 # Running the Project
 
 ## Create a virtual environment
 
-`python -m venv .venv`
+```bash
+python -m venv .venv
+```
 
 Activate:
 
 macOS/Linux:
 
-`source .venv/bin/activate`
+```bash
+source .venv/bin/activate
+```
 
 Windows:
 
-`.venv\Scripts\activate`
+```bash
+.venv\Scripts\activate
+```
 
-* * *
+---
 
 ## Install dependencies
 
-`pip install -r requirements.txt`
+```bash
+pip install -r requirements.txt
+```
 
-* * *
+---
 
 ## Configure the app
 
 Copy:
 
-`cp config.example.yaml config.yaml`
+```bash
+cp config.example.yaml config.yaml
+```
 
 Edit `config.yaml` with your preferences.
 
-* * *
+---
+
+## Configure email support
+
+Create a `.env` file:
+
+```env
+AUTO_JOB_EMAIL_PASSWORD=your-app-password
+```
+
+Example Gmail settings:
+
+```yaml
+email:
+  enabled: true
+  to: your_email@example.com
+  from_email: your_email@example.com
+  smtp_host: smtp.gmail.com
+  smtp_port: 587
+```
+
+---
 
 ## Run a search
 
-`python -m auto_job.cli search`
+```bash
+python -m auto_job.cli search
+```
 
-* * *
+---
+
+# Testing
+
+Run all tests:
+
+```bash
+python -m pytest
+```
+
+Current test coverage includes:
+
+- ATS parsing
+- Scoring logic
+- Config writing
+- Ashby parsing/normalization
+- Discovery deduplication
+
+---
 
 # Future Improvements
 
-Planned improvements include:
+Potential future directions:
 
-*   Additional job sources
-*   RSS feed support
-*   Improved scoring heuristics
-*   Better deduplication
-*   Email reports
-*   Scheduled runs
-*   Structured logging
-*   Automated tests
-*   SQLAlchemy migration evaluation
-*   Web dashboard or API layer
+- Improved ATS discovery strategies
+- Additional ATS providers
+- Better salary normalization
+- Structured logging
+- Scheduled job runs
+- Report formatting improvements
+- HTML email support
+- Web dashboard/API layer
+- Smarter deduplication strategies
 
-* * *
+---
 
 # Learning Goals
 
 This project is intentionally being built incrementally to practice:
 
-*   Backend architecture
-*   API integration
-*   Data normalization
-*   Scoring/ranking systems
-*   Local persistence
-*   CLI application design
-*   Automation workflows
-*   Maintainable Python project structure
+- Backend architecture
+- API integration
+- Data normalization
+- Scoring/ranking systems
+- Local persistence
+- CLI application design
+- Automation workflows
+- Config-driven application structure
+- Maintainable Python project organization
+- Real-world data ingestion pipelines
