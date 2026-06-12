@@ -77,7 +77,7 @@ def search():
 
     print_jobs(result.jobs, 10)
 
-    report = build_text_report(result.jobs)
+    report = build_text_report(result.jobs, 20)
 
     report_path = save_text_report(report)
     print(f"\nSaved report to {report_path}")

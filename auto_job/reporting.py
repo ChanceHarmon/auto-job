@@ -5,7 +5,7 @@ import re
 
 from auto_job.models import Job
 
-DESCRIPTION_PREVIEW_LENGTH = 500
+DESCRIPTION_PREVIEW_LENGTH = 1000
 
 
 def clean_description(description: str) -> str:
