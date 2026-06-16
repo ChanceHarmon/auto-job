@@ -1,7 +1,75 @@
+from datetime import date, datetime, timezone
+
 import httpx
 
 from auto_job.models import Job
 from auto_job.sources.base import JobSource
+
+
+def parse_lever_date(created_at: int | None) -> date | None:
+    if not created_at:
+        return None
+
+    return datetime.fromtimestamp(created_at / 1000, timezone.utc).date()
+
+
+def detect_lever_remote_status(location: str | None) -> str:
+    if not location:
+        return "unknown"
+
+    if "remote" in location.lower():
+        return "remote"
+
+    return "onsite"
+
+
+def build_lever_description(posting: dict) -> str:
+    description_parts = []
+
+    description_plain = posting.get("descriptionPlain")
+
+    if description_plain:
+        description_parts.append(description_plain)
+
+    content = posting.get("content") or {}
+
+    description = content.get("description")
+
+    if description and description not in description_parts:
+        description_parts.append(description)
+
+    for section in content.get("lists", []):
+        section_title = section.get("text")
+        section_content = section.get("content")
+
+        if section_title:
+            description_parts.append(section_title)
+
+        if section_content:
+            description_parts.append(section_content)
+
+    closing = content.get("closing")
+
+    if closing:
+        description_parts.append(closing)
+
+    return "\n\n".join(description_parts)
+
+
+def normalize_lever_posting(company: str, posting: dict) -> Job:
+    categories = posting.get("categories") or {}
+    location = categories.get("location")
+
+    return Job(
+        company=company,
+        title=posting.get("text") or "Unknown title",
+        source=LeverSource.name,
+        posting_url=posting.get("hostedUrl") or posting.get("applyUrl"),
+        location=location,
+        remote_status=detect_lever_remote_status(location),
+        date_posted=parse_lever_date(posting.get("createdAt")),
+        description=build_lever_description(posting),
+    )
 
 
 class LeverSource(JobSource):
@@ -37,7 +105,21 @@ class LeverSource(JobSource):
 
                 postings = response.json()
 
-            except Exception as error:
+            except httpx.HTTPStatusError as error:
+                if error.response.status_code == 404:
+                    print(
+                        f"Skipping Lever company {company_slug}: "
+                        "not found. Check the company_slug or confirm the company still uses Lever."
+                    )
+                else:
+                    print(
+                        f"Error fetching Lever jobs "
+                        f"for {company_slug}: {error}"
+                    )
+
+                continue
+
+            except httpx.RequestError as error:
                 print(
                     f"Error fetching Lever jobs "
                     f"for {company_slug}: {error}"
@@ -47,31 +129,7 @@ class LeverSource(JobSource):
 
             for posting in postings:
 
-                categories = posting.get("categories", {})
-
-                location = categories.get(
-                    "location",
-                    "Unknown",
-                )
-
-                remote_status = (
-                    "remote"
-                    if "remote" in location.lower()
-                    else "onsite"
-                )
-
-                job = Job(
-                    company=company,
-                    title=posting.get("text", "Unknown title"),
-                    source="lever",
-                    posting_url=posting.get("hostedUrl"),
-                    location=location,
-                    remote_status=remote_status,
-                    description=posting.get(
-                        "descriptionPlain",
-                        "",
-                    ),
-                )
+                job = normalize_lever_posting(company, posting)
 
                 jobs.append(job)
 

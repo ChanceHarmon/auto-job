@@ -36,6 +36,24 @@ def build_ashby_company_config(
     return config
 
 
+def build_lever_company_config(
+    company: str,
+    company_slug: str,
+    discovered_via: str | None = None,
+) -> dict:
+    """Build a normalized Lever config entry."""
+
+    config = {
+        "company": company,
+        "company_slug": company_slug,
+    }
+
+    if discovered_via:
+        config["discovered_via"] = discovered_via
+
+    return config
+
+
 def add_greenhouse_board(
     config_path: str,
     company: str,
@@ -118,6 +136,47 @@ def add_ashby_company(
     return True
 
 
+def add_lever_company(
+    config_path: str,
+    company: str,
+    company_slug: str,
+) -> bool:
+    """Add a Lever company if it does not already exist."""
+
+    with open(config_path, "r", encoding="utf-8") as file:
+        config_data = yaml.safe_load(file)
+
+    companies = config_data["sources"].setdefault(
+        "lever_companies",
+        []
+    )
+
+    already_exists = any(
+        existing["company_slug"] == company_slug
+        for existing in companies
+    )
+
+    if already_exists:
+        return False
+
+    companies.append(
+        build_lever_company_config(
+            company,
+            company_slug,
+            discovered_via="rss",
+        )
+    )
+
+    with open(config_path, "w", encoding="utf-8") as file:
+        yaml.safe_dump(
+            config_data,
+            file,
+            sort_keys=False,
+        )
+
+    return True
+
+
 def add_provider_source(
     config_path: str,
     provider: str,
@@ -130,5 +189,8 @@ def add_provider_source(
 
     if provider == "ashby":
         return add_ashby_company(config_path, company_slug.title(), company_slug)
+
+    if provider == "lever":
+        return add_lever_company(config_path, company_slug.title(), company_slug)
 
     return False
