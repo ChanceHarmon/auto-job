@@ -378,7 +378,7 @@ Configuration controls:
 - `search.keywords`: role and skill terms used for scoring
 - `search.remote_only`: excludes non-remote jobs when enabled
 - `search.recency_days`: excludes old postings when dates are available
-- `filters.excluded_keywords`: hard excludes roles such as senior/staff/manager
+- `filters.excluded_keywords`: hard excludes jobs when these words appear in the title
 - `filters.preferred_stack`: adds score for preferred technologies
 - `filters.minimum_score`: minimum score required before saving/reporting
 - `sources.enabled`: source adapters to run during `search`

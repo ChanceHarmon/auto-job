@@ -55,6 +55,25 @@ def test_excluded_keyword_returns_zero_score():
     assert "excluded keyword: senior" in job.match_reasons
 
 
+def test_excluded_keyword_in_description_does_not_return_zero_score():
+    app_config = build_test_config()
+
+    job = Job(
+        company="Example Co",
+        title="Backend Engineer",
+        source="test",
+        posting_url="https://example.com/job",
+        location="Remote",
+        remote_status="remote",
+        description="Work with senior engineers on Python APIs and PostgreSQL.",
+    )
+
+    score = score_job(job, app_config)
+
+    assert score > 0
+    assert "excluded keyword: senior" not in job.match_reasons
+
+
 def test_onsite_job_returns_zero_when_remote_only_enabled():
     app_config = build_test_config()
 
