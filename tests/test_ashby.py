@@ -1,8 +1,11 @@
 from auto_job.sources.ashby import (
+    AshbySource,
     build_ashby_posting_url,
     get_remote_status,
+    parse_ashby_description,
     parse_ashby_jobs,
 )
+from auto_job.config import AppConfig
 
 
 def test_parse_ashby_jobs_extracts_job_data():
@@ -26,6 +29,95 @@ def test_parse_ashby_jobs_extracts_job_data():
 
 def test_get_remote_status_maps_remote_to_remote():
     assert get_remote_status("Remote") == "remote"
+
+
+def test_parse_ashby_description_extracts_json_ld_description():
+    html = """
+    <html>
+        <head>
+            <script type="application/ld+json">
+                {
+                    "@context": "https://schema.org/",
+                    "@type": "JobPosting",
+                    "title": "Product Engineer",
+                    "description": "<p>Build Python APIs with PostgreSQL.</p>"
+                }
+            </script>
+        </head>
+    </html>
+    """
+
+    description = parse_ashby_description(html)
+
+    assert description == "<p>Build Python APIs with PostgreSQL.</p>"
+
+
+def test_parse_ashby_description_falls_back_to_meta_description():
+    html = """
+    <html>
+        <head>
+            <meta name="description" content="Build Python APIs with PostgreSQL." />
+        </head>
+    </html>
+    """
+
+    description = parse_ashby_description(html)
+
+    assert description == "Build Python APIs with PostgreSQL."
+
+
+def test_ashby_source_fetches_job_descriptions(monkeypatch):
+    board_html = '''
+    "id":"123e4567-e89b-12d3-a456-426614174000",
+    "title":"Software Engineer",
+    "locationName":"Remote",
+    "workplaceType":"Remote",
+    "publishedDate":"2026-05-15"
+    '''
+    detail_html = """
+    <script type="application/ld+json">
+        {
+            "@context": "https://schema.org/",
+            "@type": "JobPosting",
+            "description": "<p>Python APIs and PostgreSQL.</p>"
+        }
+    </script>
+    """
+
+    class FakeResponse:
+        def __init__(self, text):
+            self.text = text
+
+        def raise_for_status(self):
+            pass
+
+    def fake_get(url, timeout=10):
+        if url == "https://jobs.ashbyhq.com/example":
+            return FakeResponse(board_html)
+
+        return FakeResponse(detail_html)
+
+    config = AppConfig.model_validate(
+        {
+            "search": {},
+            "filters": {},
+            "sources": {
+                "ashby_companies": [
+                    {
+                        "company": "Example",
+                        "company_slug": "example",
+                    }
+                ]
+            },
+        }
+    )
+
+    monkeypatch.setattr("auto_job.sources.ashby.httpx.get", fake_get)
+
+    jobs = AshbySource(config).fetch_jobs()
+
+    assert len(jobs) == 1
+    assert jobs[0].description == "<p>Python APIs and PostgreSQL.</p>"
 
 
 def test_get_remote_status_maps_hybrid_to_onsite():
