@@ -1,4 +1,5 @@
 import httpx
+import json
 import re
 
 from auto_job.models import Job
@@ -13,6 +14,15 @@ JOB_PATTERN = re.compile(
     re.DOTALL,
 )
 
+JSON_LD_PATTERN = re.compile(
+    r'<script type="application/ld\+json">(.*?)</script>',
+    re.DOTALL,
+)
+META_DESCRIPTION_PATTERN = re.compile(
+    r'<meta name="description" content="([^"]*)"',
+    re.DOTALL,
+)
+
 def clean_ashby_html(html: str) -> str:
     return html.replace("\\/", "/").replace("&quot;", '"')
 
@@ -20,6 +30,28 @@ def clean_ashby_html(html: str) -> str:
 def parse_ashby_jobs(html: str) -> list[tuple[str, str, str, str, str]]:
     clean_html = clean_ashby_html(html)
     return JOB_PATTERN.findall(clean_html)
+
+
+def parse_ashby_description(html: str) -> str:
+    match = JSON_LD_PATTERN.search(html)
+
+    if match:
+        try:
+            job_data = json.loads(match.group(1))
+        except json.JSONDecodeError:
+            job_data = {}
+
+        description = job_data.get("description")
+
+        if description:
+            return description
+
+    meta_match = META_DESCRIPTION_PATTERN.search(html)
+
+    if meta_match:
+        return meta_match.group(1)
+
+    return ""
 
 
 def get_remote_status(workplace_type: str) -> str:
@@ -31,6 +63,18 @@ def get_remote_status(workplace_type: str) -> str:
 
 def build_ashby_posting_url(company_slug: str, job_id: str) -> str:
     return f"https://jobs.ashbyhq.com/{company_slug}/{job_id}"
+
+
+def fetch_ashby_description(posting_url: str) -> str:
+    try:
+        response = httpx.get(posting_url, timeout=10)
+        response.raise_for_status()
+    except Exception as error:
+        print(f"Error fetching Ashby job description for {posting_url}: {error}")
+        return ""
+
+    return parse_ashby_description(response.text)
+
 
 class AshbySource(JobSource):
 
@@ -64,6 +108,7 @@ class AshbySource(JobSource):
                 remote_status = get_remote_status(workplace_type)
 
                 posting_url = build_ashby_posting_url(company_slug, job_id)
+                description = fetch_ashby_description(posting_url)
 
                 job = Job(
                     company=company,
@@ -73,7 +118,7 @@ class AshbySource(JobSource):
                     location=location,
                     remote_status=remote_status,
                     date_posted=published_date,
-                    description="",
+                    description=description,
                 )
                 jobs.append(job)
 
