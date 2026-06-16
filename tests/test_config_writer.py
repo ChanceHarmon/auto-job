@@ -3,6 +3,8 @@ import yaml
 from auto_job.config_writer import (
     add_ashby_company,
     add_greenhouse_board,
+    add_lever_company,
+    add_provider_source,
 )
 
 
@@ -118,3 +120,58 @@ def test_add_ashby_companies_prevents_duplicates(tmp_path):
     boards = updated_config["sources"]["ashby_companies"]
 
     assert len(boards) == 1
+
+
+def test_add_lever_company_adds_new_company(tmp_path):
+    config_path = tmp_path / "config.yaml"
+
+    config_data = {
+        "sources": {}
+    }
+
+    with open(config_path, "w", encoding="utf-8") as file:
+        yaml.safe_dump(config_data, file)
+
+    added = add_lever_company(
+        config_path,
+        "ExampleCo",
+        "exampleco",
+    )
+
+    assert added is True
+
+    with open(config_path, "r", encoding="utf-8") as file:
+        updated_config = yaml.safe_load(file)
+
+    companies = updated_config["sources"]["lever_companies"]
+
+    assert len(companies) == 1
+    assert companies[0]["company"] == "ExampleCo"
+    assert companies[0]["company_slug"] == "exampleco"
+
+
+def test_add_provider_source_supports_lever(tmp_path):
+    config_path = tmp_path / "config.yaml"
+
+    config_data = {
+        "sources": {}
+    }
+
+    with open(config_path, "w", encoding="utf-8") as file:
+        yaml.safe_dump(config_data, file)
+
+    added = add_provider_source(
+        config_path,
+        "lever",
+        "exampleco",
+    )
+
+    assert added is True
+
+    with open(config_path, "r", encoding="utf-8") as file:
+        updated_config = yaml.safe_load(file)
+
+    companies = updated_config["sources"]["lever_companies"]
+
+    assert len(companies) == 1
+    assert companies[0]["company_slug"] == "exampleco"
