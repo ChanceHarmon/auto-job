@@ -86,7 +86,7 @@ def search():
 
 
 @app.command()
-def detect_ats(url: str):
+def detect_ats(url: str, write: bool = False):
     """Detect ATS provider from a careers page."""
     result = detect_ats_provider(url)
 
@@ -101,7 +101,7 @@ def detect_ats(url: str):
 
     print_config_snippet(result)
 
-    if result.company_slug:
+    if write and result.company_slug:
         added = add_provider_source(
             "config.yaml",
             result.provider,
