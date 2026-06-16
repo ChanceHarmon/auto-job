@@ -1,6 +1,7 @@
 from auto_job.sources.ashby import (
     AshbySource,
     build_ashby_posting_url,
+    fetch_ashby_descriptions,
     get_remote_status,
     parse_ashby_description,
     parse_ashby_jobs,
@@ -118,6 +119,25 @@ def test_ashby_source_fetches_job_descriptions(monkeypatch):
 
     assert len(jobs) == 1
     assert jobs[0].description == "<p>Python APIs and PostgreSQL.</p>"
+
+
+def test_fetch_ashby_descriptions_returns_descriptions_by_url(monkeypatch):
+    posting_urls = [
+        "https://jobs.ashbyhq.com/example/1",
+        "https://jobs.ashbyhq.com/example/2",
+    ]
+
+    monkeypatch.setattr(
+        "auto_job.sources.ashby.fetch_ashby_description",
+        lambda posting_url: f"description for {posting_url}",
+    )
+
+    descriptions = fetch_ashby_descriptions(posting_urls)
+
+    assert descriptions == {
+        "https://jobs.ashbyhq.com/example/1": "description for https://jobs.ashbyhq.com/example/1",
+        "https://jobs.ashbyhq.com/example/2": "description for https://jobs.ashbyhq.com/example/2",
+    }
 
 
 def test_get_remote_status_maps_hybrid_to_onsite():
