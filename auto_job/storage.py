@@ -1,3 +1,4 @@
+import json
 import sqlite3
 from pathlib import Path
 from datetime import date
@@ -10,6 +11,16 @@ DB_PATH = Path("auto_job.db")
 
 def get_connection():
     return sqlite3.connect(DB_PATH)
+
+
+def ensure_column(connection, table_name: str, column_name: str, column_definition: str):
+    columns = connection.execute(f"PRAGMA table_info({table_name})").fetchall()
+    column_names = {column[1] for column in columns}
+
+    if column_name not in column_names:
+        connection.execute(
+            f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_definition}"
+        )
 
 
 def init_db():
@@ -27,11 +38,15 @@ def init_db():
                 salary TEXT,
                 date_posted TEXT,
                 description TEXT,
+                detected_stack TEXT,
+                match_reasons TEXT,
                 match_score INTEGER DEFAULT 0,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
             """
         )
+        ensure_column(connection, "jobs", "detected_stack", "TEXT")
+        ensure_column(connection, "jobs", "match_reasons", "TEXT")
 
 
 def save_job(job: Job) -> bool:
@@ -48,9 +63,11 @@ def save_job(job: Job) -> bool:
                 salary,
                 date_posted,
                 description,
+                detected_stack,
+                match_reasons,
                 match_score
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 job.company,
@@ -62,6 +79,8 @@ def save_job(job: Job) -> bool:
                 job.salary,
                 job.date_posted.isoformat() if job.date_posted else None,
                 job.description,
+                json.dumps(job.detected_stack),
+                json.dumps(job.match_reasons),
                 job.match_score,
             ),
         )
@@ -95,6 +114,8 @@ def get_recent_jobs(limit: int = 20) -> list[Job]:
                 salary,
                 date_posted,
                 description,
+                detected_stack,
+                match_reasons,
                 match_score
             FROM jobs
             ORDER BY match_score DESC, created_at DESC
@@ -122,7 +143,9 @@ def get_recent_jobs(limit: int = 20) -> list[Job]:
             salary=row[6],
             date_posted=date_posted,
             description=row[8],
-            match_score=row[9],
+            detected_stack=json.loads(row[9] or "[]"),
+            match_reasons=json.loads(row[10] or "[]"),
+            match_score=row[11],
         )
 
         jobs.append(job)

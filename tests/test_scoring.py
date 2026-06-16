@@ -1,10 +1,42 @@
 from auto_job.models import Job
 from auto_job.scoring import score_job
-from auto_job.config import load_config
+from auto_job.config import AppConfig
+
+
+def build_test_config() -> AppConfig:
+    return AppConfig.model_validate(
+        {
+            "search": {
+                "keywords": [
+                    "backend engineer",
+                    "software engineer",
+                    "python developer",
+                ],
+                "remote_only": True,
+                "recency_days": 7,
+            },
+            "filters": {
+                "excluded_keywords": [
+                    "senior",
+                    "staff",
+                    "principal",
+                ],
+                "preferred_stack": [
+                    "python",
+                    "django",
+                    "postgresql",
+                ],
+                "minimum_score": 40,
+            },
+            "sources": {
+                "enabled": [],
+            },
+        }
+    )
 
 
 def test_excluded_keyword_returns_zero_score():
-    app_config = load_config()
+    app_config = build_test_config()
 
     job = Job(
         company="Example Co",
@@ -24,7 +56,7 @@ def test_excluded_keyword_returns_zero_score():
 
 
 def test_onsite_job_returns_zero_when_remote_only_enabled():
-    app_config = load_config()
+    app_config = build_test_config()
 
     job = Job(
         company="Example Co",
@@ -44,7 +76,7 @@ def test_onsite_job_returns_zero_when_remote_only_enabled():
 
 
 def test_matching_remote_job_gets_positive_score():
-    app_config = load_config()
+    app_config = build_test_config()
 
     job = Job(
         company="Example Co",
