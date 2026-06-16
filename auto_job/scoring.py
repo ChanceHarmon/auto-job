@@ -17,12 +17,13 @@ def score_job(job: Job, config: AppConfig) -> int:
             job.description or "",
         ]
     ).lower()
+    title_text = (job.title or "").lower()
 
-    # Hard exclude unwanted jobs before scoring
+    # Hard exclude unwanted job titles before scoring
     for excluded in config.filters.excluded_keywords:
-        if excluded.lower() in searchable_text:
+        if excluded.lower() in title_text:
             job.match_score = 0
-            job.match_reasons= [f"excluded keyword: {excluded}"]
+            job.match_reasons = [f"excluded keyword: {excluded}"]
             return 0
 
     # Hard exclude non-remote jobs when remote_only is enabled
@@ -30,8 +31,7 @@ def score_job(job: Job, config: AppConfig) -> int:
         job.match_score = 0
         job.match_reasons = ["not remote"]
         return 0
-    
-        # Hard exclude old jobs
+    # Hard exclude old jobs
     if job.date_posted:
         cutoff_date = date.today() - timedelta(days=config.search.recency_days)
 
