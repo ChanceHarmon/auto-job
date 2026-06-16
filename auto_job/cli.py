@@ -36,6 +36,28 @@ def print_jobs(jobs: list[Job], limit: int = 10):
         print()
 
 
+def print_search_diagnostics(result):
+    """Print source and filtering summaries for a search run."""
+    print("\nSource summary:")
+
+    for source_name, fetched_count in result.source_fetch_counts.items():
+        matched_count = result.source_match_counts.get(source_name, 0)
+        print(f"- {source_name}: fetched {fetched_count}, matched {matched_count}")
+
+    if result.deduped_count:
+        print(f"- deduped matches: {result.deduped_count}")
+
+    if result.filter_counts:
+        print("\nFiltered out:")
+
+        for reason, count in sorted(
+            result.filter_counts.items(),
+            key=lambda item: item[1],
+            reverse=True,
+        ):
+            print(f"- {reason}: {count}")
+
+
 def print_config_snippet(result):
     provider_config = {
         "greenhouse": ("greenhouse_boards", "board_token"),
@@ -74,6 +96,9 @@ def search():
 
     print(f"\nMatched {len(result.jobs)} jobs")
     print(f"Saved {result.saved_count} new jobs to SQLite\n")
+
+    print_search_diagnostics(result)
+    print()
 
     print_jobs(result.jobs, 10)
 

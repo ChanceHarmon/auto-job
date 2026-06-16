@@ -466,6 +466,25 @@ email:
 python -m auto_job.cli search
 ```
 
+The search output includes source and filtering diagnostics:
+
+```text
+Source summary:
+- remoteok: fetched 100, matched 2
+- rss: fetched 57, matched 0
+- greenhouse: fetched 6665, matched 9
+- lever: fetched 212, matched 0
+- ashby: fetched 1022, matched 2
+
+Filtered out:
+- below minimum score: 4300
+- excluded keyword: senior: 2100
+- not remote: 900
+- too old: 20
+```
+
+Use these counts to tune sources, filters, and scoring preferences. For example, a source with many fetched jobs and zero matches may be stale, too noisy, or mismatched with the current search preferences.
+
 ---
 
 # Testing
@@ -480,6 +499,7 @@ Current test coverage includes:
 
 - ATS parsing
 - Scoring logic
+- Search diagnostics
 - CLI write-safety behavior
 - Config writing
 - SQLite persistence
