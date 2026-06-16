@@ -22,6 +22,39 @@ Important:
 
 ---
 
+# Quickstart
+
+Clone the repository, create a virtual environment, and install dependencies:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+Create a local config file:
+
+```bash
+cp config.example.yaml config.yaml
+```
+
+Verify the install:
+
+```bash
+python -m pytest
+python -m auto_job.cli config
+```
+
+Run a search:
+
+```bash
+python -m auto_job.cli search
+```
+
+Local runtime files such as `config.yaml`, `.env`, `auto_job.db`, and `reports/` are intentionally ignored by git.
+
+---
+
 # Features
 
 ## Multi-Source Job Ingestion
@@ -135,6 +168,7 @@ Features include:
 - Batch inserts
 - Deduplication
 - Recent job retrieval
+- Stored match scores and match explanations
 
 Current deduplication strategy:
 
@@ -203,8 +237,11 @@ python -m auto_job.cli config
 python -m auto_job.cli recent
 python -m auto_job.cli search
 python -m auto_job.cli detect-ats <url>
+python -m auto_job.cli detect-ats <url> --write
 python -m auto_job.cli discover-ats <urls>
+python -m auto_job.cli discover-ats <urls> --write
 python -m auto_job.cli discover-from-rss
+python -m auto_job.cli discover-from-rss --write
 ```
 
 Primary workflow:
@@ -212,6 +249,17 @@ Primary workflow:
 ```bash
 python -m auto_job.cli search
 ```
+
+Command summary:
+
+- `config`: print the loaded configuration
+- `recent`: show recently saved jobs from SQLite
+- `search`: fetch, score, store, report, and optionally email matches
+- `detect-ats`: inspect one URL for a supported ATS provider
+- `discover-ats`: inspect multiple URLs for supported ATS providers
+- `discover-from-rss`: use configured RSS job URLs as ATS discovery inputs
+
+Commands that support `--write` will update `config.yaml`. Without `--write`, discovery commands are safe inspection tools.
 
 ---
 
@@ -269,18 +317,28 @@ auto-job/
 │       ├── registry.py
 │       ├── remoteok.py
 │       └── rss.py
-├── reports/
 ├── tests/
 ├── config.example.yaml
-├── config.yaml
-├── auto_job.db
 ├── requirements.txt
 └── README.md
 ```
 
+Generated local files:
+
+- `config.yaml`: local preferences copied from `config.example.yaml`
+- `.env`: optional email password configuration
+- `auto_job.db`: local SQLite database
+- `reports/`: generated text reports
+
 ---
 
 # Configuration
+
+Create `config.yaml` from the example file:
+
+```bash
+cp config.example.yaml config.yaml
+```
 
 Example:
 
@@ -314,6 +372,18 @@ sources:
     - greenhouse
     - ashby
 ```
+
+Configuration controls:
+
+- `search.keywords`: role and skill terms used for scoring
+- `search.remote_only`: excludes non-remote jobs when enabled
+- `search.recency_days`: excludes old postings when dates are available
+- `filters.excluded_keywords`: hard excludes roles such as senior/staff/manager
+- `filters.preferred_stack`: adds score for preferred technologies
+- `filters.minimum_score`: minimum score required before saving/reporting
+- `sources.enabled`: source adapters to run during `search`
+
+`config.yaml` is intentionally ignored by git so personal job preferences, target companies, and email settings stay local.
 
 ---
 
@@ -363,6 +433,14 @@ Edit `config.yaml` with your preferences.
 
 ## Configure email support
 
+For Gmail SMTP, `AUTO_JOB_EMAIL_PASSWORD` should be a Google App Password, not your normal Google account password.
+
+Google requires 2-Step Verification before app passwords can be created. See Google's official guide:
+
+```text
+https://support.google.com/accounts/answer/185833
+```
+
 Create a `.env` file:
 
 ```env
@@ -402,9 +480,13 @@ Current test coverage includes:
 
 - ATS parsing
 - Scoring logic
+- CLI write-safety behavior
 - Config writing
+- SQLite persistence
 - Ashby parsing/normalization
 - Discovery deduplication
+
+Tests are designed to run without a personal `config.yaml`.
 
 ---
 
@@ -414,7 +496,10 @@ Potential future directions:
 
 - Improved ATS discovery strategies
 - Additional ATS providers
+- Lever config-writing support
 - Better salary normalization
+- Source adapter tests with mocked HTTP responses
+- Simple SQLite migration/version tracking
 - Structured logging
 - Scheduled job runs
 - Report formatting improvements
