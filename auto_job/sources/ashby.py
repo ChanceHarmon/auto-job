@@ -1,3 +1,5 @@
+from concurrent.futures import ThreadPoolExecutor
+
 import httpx
 import json
 import re
@@ -22,6 +24,7 @@ META_DESCRIPTION_PATTERN = re.compile(
     r'<meta name="description" content="([^"]*)"',
     re.DOTALL,
 )
+MAX_DESCRIPTION_WORKERS = 8
 
 def clean_ashby_html(html: str) -> str:
     return html.replace("\\/", "/").replace("&quot;", '"')
@@ -76,6 +79,18 @@ def fetch_ashby_description(posting_url: str) -> str:
     return parse_ashby_description(response.text)
 
 
+def fetch_ashby_descriptions(posting_urls: list[str]) -> dict[str, str]:
+    if not posting_urls:
+        return {}
+
+    worker_count = min(MAX_DESCRIPTION_WORKERS, len(posting_urls))
+
+    with ThreadPoolExecutor(max_workers=worker_count) as executor:
+        descriptions = executor.map(fetch_ashby_description, posting_urls)
+
+    return dict(zip(posting_urls, descriptions))
+
+
 class AshbySource(JobSource):
 
     name = "ashby"
@@ -103,12 +118,17 @@ class AshbySource(JobSource):
                 continue
 
             matches = parse_ashby_jobs(response.text)
+            posting_urls = [
+                build_ashby_posting_url(company_slug, job_id)
+                for job_id, _, _, _, _ in matches
+            ]
+            descriptions_by_url = fetch_ashby_descriptions(posting_urls)
 
             for job_id, title, location, workplace_type, published_date in matches:
                 remote_status = get_remote_status(workplace_type)
 
                 posting_url = build_ashby_posting_url(company_slug, job_id)
-                description = fetch_ashby_description(posting_url)
+                description = descriptions_by_url.get(posting_url, "")
 
                 job = Job(
                     company=company,
