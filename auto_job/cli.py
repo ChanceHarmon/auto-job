@@ -11,6 +11,7 @@ from auto_job.config_writer import add_provider_source
 from auto_job.discovery import discover_ats_from_job_urls, get_discovery_urls_from_jobs
 from auto_job.sources.rss import RSSSource
 from auto_job.emailer import send_report_email
+from auto_job.source_validation import validate_sources
 
 app = typer.Typer()
 
@@ -58,6 +59,41 @@ def print_search_diagnostics(result):
             print(f"- {reason}: {count}")
 
 
+def print_source_validation_results(results):
+    print("\nSource validation:")
+
+    if not results:
+        print("- no configured sources to validate")
+        return
+
+    for result in results:
+        details = f"{result.provider}:{result.identifier}"
+        message = f" - {result.message}" if result.message else ""
+        print(
+            f"- {details} ({result.company}): "
+            f"{result.status}, {result.job_count} jobs{message}"
+        )
+
+
+def run_search_workflow(app_config):
+    result = run_job_search(app_config)
+
+    print(f"\nMatched {len(result.jobs)} jobs")
+    print(f"Saved {result.saved_count} new jobs to SQLite\n")
+
+    print_search_diagnostics(result)
+    print()
+
+    print_jobs(result.jobs, 10)
+
+    report = build_text_report(result.jobs, 20)
+
+    report_path = save_text_report(report)
+    print(f"\nSaved report to {report_path}")
+
+    send_report_email(report, app_config)
+
+
 def print_config_snippet(result):
     provider_config = {
         "greenhouse": ("greenhouse_boards", "board_token"),
@@ -92,22 +128,28 @@ def search():
     """Search enabled job sources, score results, and save matches."""
     app_config = load_config()
 
-    result = run_job_search(app_config)
+    run_search_workflow(app_config)
 
-    print(f"\nMatched {len(result.jobs)} jobs")
-    print(f"Saved {result.saved_count} new jobs to SQLite\n")
 
-    print_search_diagnostics(result)
-    print()
+@app.command("validate-sources")
+def validate_sources_command():
+    """Validate configured job sources and print current job counts."""
+    app_config = load_config()
 
-    print_jobs(result.jobs, 10)
+    results = validate_sources(app_config)
+    print_source_validation_results(results)
 
-    report = build_text_report(result.jobs, 20)
 
-    report_path = save_text_report(report)
-    print(f"\nSaved report to {report_path}")
+@app.command()
+def run(validate: bool = True):
+    """Validate sources, run search, save report, and email if enabled."""
+    app_config = load_config()
 
-    send_report_email(report, app_config)
+    if validate:
+        results = validate_sources(app_config)
+        print_source_validation_results(results)
+
+    run_search_workflow(app_config)
 
 
 @app.command()

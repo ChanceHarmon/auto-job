@@ -10,6 +10,10 @@ def build_test_config() -> AppConfig:
                 "keywords": [
                     "backend engineer",
                 ],
+                "locations": [
+                    "united states",
+                    "canada",
+                ],
                 "remote_only": True,
             },
             "filters": {
@@ -31,7 +35,7 @@ def test_score_and_filter_jobs_returns_diagnostics():
             title="Backend Engineer",
             source="greenhouse",
             posting_url="https://example.com/jobs/1",
-            location="Remote",
+            location="United States Remote",
             remote_status="remote",
             description="Python APIs",
         ),
@@ -49,9 +53,18 @@ def test_score_and_filter_jobs_returns_diagnostics():
             title="Operations Associate",
             source="rss:Example Feed",
             posting_url="https://example.com/jobs/3",
-            location="Remote",
+            location="United States",
             remote_status="remote",
             description="",
+        ),
+        Job(
+            company="Outside Location Co",
+            title="Backend Engineer",
+            source="ashby",
+            posting_url="https://example.com/jobs/4",
+            location="Portugal Remote",
+            remote_status="remote",
+            description="Python APIs",
         ),
     ]
 
@@ -66,5 +79,6 @@ def test_score_and_filter_jobs_returns_diagnostics():
     }
     assert filter_counts == {
         "not remote": 1,
+        "outside allowed locations": 1,
         "below minimum score": 1,
     }
