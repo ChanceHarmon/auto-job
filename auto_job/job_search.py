@@ -56,7 +56,7 @@ def get_filter_reason(job: Job, score: int, minimum_score: int) -> str:
 
         if (
             reason.startswith("excluded keyword:")
-            or reason in {"not remote", "too old"}
+            or reason in {"not remote", "outside allowed locations", "too old"}
         ):
             return reason
 

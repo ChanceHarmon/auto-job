@@ -11,6 +11,7 @@ from auto_job.config_writer import add_provider_source
 from auto_job.discovery import discover_ats_from_job_urls, get_discovery_urls_from_jobs
 from auto_job.sources.rss import RSSSource
 from auto_job.emailer import send_report_email
+from auto_job.source_validation import validate_discovery_result, validate_sources
 
 app = typer.Typer()
 
@@ -58,6 +59,57 @@ def print_search_diagnostics(result):
             print(f"- {reason}: {count}")
 
 
+def print_source_validation_results(results, problems_only: bool = False):
+    print("\nSource validation:")
+
+    if not results:
+        print("- no configured sources to validate")
+        return
+
+    visible_results = [
+        result
+        for result in results
+        if not problems_only or result.status != "ok"
+    ]
+
+    if not visible_results:
+        print("- no source problems found")
+    for result in visible_results:
+        details = f"{result.provider}:{result.identifier}"
+        message = f" - {result.message}" if result.message else ""
+        print(
+            f"- {details} ({result.company}): "
+            f"{result.status}, {result.job_count} jobs{message}"
+        )
+
+    status_counts = {}
+    for result in results:
+        status_counts[result.status] = status_counts.get(result.status, 0) + 1
+
+    print("\nValidation summary:")
+    for status, count in sorted(status_counts.items()):
+        print(f"- {status}: {count}")
+
+
+def run_search_workflow(app_config):
+    result = run_job_search(app_config)
+
+    print(f"\nMatched {len(result.jobs)} jobs")
+    print(f"Saved {result.saved_count} new jobs to SQLite\n")
+
+    print_search_diagnostics(result)
+    print()
+
+    print_jobs(result.jobs, 10)
+
+    report = build_text_report(result.jobs, 20)
+
+    report_path = save_text_report(report)
+    print(f"\nSaved report to {report_path}")
+
+    send_report_email(report, app_config)
+
+
 def print_config_snippet(result):
     provider_config = {
         "greenhouse": ("greenhouse_boards", "board_token"),
@@ -77,6 +129,21 @@ def print_config_snippet(result):
 
 
 @app.command()
+def guide():
+    """Show the recommended daily workflow."""
+
+    print("\nRecommended workflow:\n")
+    print("1. Validate configured sources")
+    print("   python -m auto_job.cli validate-sources --problems-only")
+    print("2. Discover new ATS sources from RSS jobs")
+    print("   python -m auto_job.cli discover-from-rss --write")
+    print("3. Run validation, search, storage, reporting, and email")
+    print("   python -m auto_job.cli run")
+    print("4. Review recently saved jobs")
+    print("   python -m auto_job.cli recent")
+
+
+@app.command()
 def recent(limit: int = 10):
     """Show recent saved jobs."""
 
@@ -92,22 +159,28 @@ def search():
     """Search enabled job sources, score results, and save matches."""
     app_config = load_config()
 
-    result = run_job_search(app_config)
+    run_search_workflow(app_config)
 
-    print(f"\nMatched {len(result.jobs)} jobs")
-    print(f"Saved {result.saved_count} new jobs to SQLite\n")
 
-    print_search_diagnostics(result)
-    print()
+@app.command("validate-sources")
+def validate_sources_command(problems_only: bool = False):
+    """Validate configured job sources and print current job counts."""
+    app_config = load_config()
 
-    print_jobs(result.jobs, 10)
+    results = validate_sources(app_config)
+    print_source_validation_results(results, problems_only=problems_only)
 
-    report = build_text_report(result.jobs, 20)
 
-    report_path = save_text_report(report)
-    print(f"\nSaved report to {report_path}")
+@app.command()
+def run(validate: bool = True):
+    """Validate sources, run search, save report, and email if enabled."""
+    app_config = load_config()
 
-    send_report_email(report, app_config)
+    if validate:
+        results = validate_sources(app_config)
+        print_source_validation_results(results)
+
+    run_search_workflow(app_config)
 
 
 @app.command()
@@ -140,7 +213,11 @@ def detect_ats(url: str, write: bool = False):
 
 
 @app.command()
-def discover_ats(urls: list[str], write: bool = False):
+def discover_ats(
+    urls: list[str],
+    write: bool = False,
+    validate: bool = True,
+):
     """Discover ATS providers from job or careers URLs."""
     results = discover_ats_from_job_urls(urls)
 
@@ -153,7 +230,19 @@ def discover_ats(urls: list[str], write: bool = False):
         print(f"ATS URL: {result.ats_url or 'Not found'}")
         print(f"Company slug: {result.company_slug or 'Not found'}")
 
+        validation_result = None
+        if validate:
+            validation_result = validate_discovery_result(result)
+            print(
+                "Validation: "
+                f"{validation_result.status}, {validation_result.job_count} jobs"
+            )
+
         if write and result.company_slug:
+            if validation_result and validation_result.status != "ok":
+                print("Skipped invalid source")
+                continue
+
             added = add_provider_source("config.yaml", result.provider, result.company_slug)
 
             if added:
@@ -164,7 +253,7 @@ def discover_ats(urls: list[str], write: bool = False):
 
 
 @app.command()
-def discover_from_rss(write: bool = False):
+def discover_from_rss(write: bool = False, validate: bool = True):
     """Discover ATS providers from configured RSS job URLs."""
 
     app_config = load_config("config.yaml")
@@ -185,13 +274,27 @@ def discover_from_rss(write: bool = False):
 
     added_count = 0
     skipped_count = 0
+    invalid_count = 0
 
     for result in results:
         print(f"\nDetected ATS: {result.provider}")
         print(f"ATS URL: {result.ats_url or 'Not found'}")
         print(f"Company slug: {result.company_slug or 'Not found'}")
 
+        validation_result = None
+        if validate:
+            validation_result = validate_discovery_result(result)
+            print(
+                "Validation: "
+                f"{validation_result.status}, {validation_result.job_count} jobs"
+            )
+
         if write and result.company_slug:
+            if validation_result and validation_result.status != "ok":
+                invalid_count += 1
+                print("Skipped invalid source")
+                continue
+
             added = add_provider_source("config.yaml", result.provider, result.company_slug)
 
             if added:
@@ -204,6 +307,8 @@ def discover_from_rss(write: bool = False):
     if write:
         print(f"\nAdded {added_count} new sources")
         print(f"Skipped {skipped_count} existing/unsupported sources")
+        if validate:
+            print(f"Skipped {invalid_count} invalid sources")
 
 
 

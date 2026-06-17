@@ -4,6 +4,10 @@ search:
     - software engineer
     - python developer
 
+  locations:
+    - united states
+    - canada
+
   remote_only: true
   salary_min: 95000
   recency_days: 7

@@ -51,6 +51,12 @@ Run a search:
 python -m auto_job.cli search
 ```
 
+Or run the normal daily workflow with source validation first:
+
+```bash
+python -m auto_job.cli run
+```
+
 Local runtime files such as `config.yaml`, `.env`, `auto_job.db`, and `reports/` are intentionally ignored by git.
 
 ---
@@ -132,11 +138,13 @@ Jobs are scored using configurable heuristics including:
 - Title matches
 - Preferred technology stack
 - Remote status
+- Allowed locations
 
 Hard filters include:
 
 - Excluded keywords
 - Remote-only filtering
+- Location filtering
 - Recency filtering
 
 Example excluded roles:
@@ -223,6 +231,7 @@ This can:
 
 - Extract posting URLs from RSS feeds
 - Detect ATS providers
+- Validate discovered sources before writing them
 - Deduplicate discoveries
 - Automatically register new providers into `config.yaml`
 
@@ -234,8 +243,11 @@ Primary commands:
 
 ```bash
 python -m auto_job.cli config
+python -m auto_job.cli guide
 python -m auto_job.cli recent
 python -m auto_job.cli search
+python -m auto_job.cli validate-sources
+python -m auto_job.cli run
 python -m auto_job.cli detect-ats <url>
 python -m auto_job.cli detect-ats <url> --write
 python -m auto_job.cli discover-ats <urls>
@@ -247,19 +259,30 @@ python -m auto_job.cli discover-from-rss --write
 Primary workflow:
 
 ```bash
-python -m auto_job.cli search
+python -m auto_job.cli run
 ```
 
 Command summary:
 
 - `config`: print the loaded configuration
+- `guide`: print the recommended daily workflow
 - `recent`: show recently saved jobs from SQLite
 - `search`: fetch, score, store, report, and optionally email matches
+- `validate-sources`: check configured RSS, Greenhouse, Lever, and Ashby sources
+- `run`: validate sources, then run search, storage, report generation, and optional email delivery
 - `detect-ats`: inspect one URL for a supported ATS provider
 - `discover-ats`: inspect multiple URLs for supported ATS providers
 - `discover-from-rss`: use configured RSS job URLs as ATS discovery inputs
 
 Commands that support `--write` will update `config.yaml`. Without `--write`, discovery commands are safe inspection tools.
+
+Use `search` when you want to skip validation and go directly to job matching. Use `run --no-validate` for the same full workflow without the validation step.
+
+Use `guide` when you want the app to print the recommended command sequence:
+
+```bash
+python -m auto_job.cli guide
+```
 
 ---
 
@@ -349,6 +372,10 @@ search:
     - software engineer
     - python developer
 
+  locations:
+    - united states
+    - canada
+
   remote_only: true
   salary_min: 95000
   recency_days: 7
@@ -376,6 +403,7 @@ sources:
 Configuration controls:
 
 - `search.keywords`: role and skill terms used for scoring
+- `search.locations`: allowed job locations used as a geographic filter
 - `search.remote_only`: excludes non-remote jobs when enabled
 - `search.recency_days`: excludes old postings when dates are available
 - `filters.excluded_keywords`: hard excludes jobs when these words appear in the title
@@ -384,6 +412,8 @@ Configuration controls:
 - `sources.enabled`: source adapters to run during `search`
 
 `config.yaml` is intentionally ignored by git so personal job preferences, target companies, and email settings stay local.
+
+`remote_only` and `search.locations` work together. `remote_only: true` filters out non-remote roles. `search.locations` then limits remote roles to allowed geographies, such as `united states` and `canada`. A generic `remote` location is not treated as an allowed geography by itself, because many boards use it for roles that may be remote outside North America.
 
 ---
 
@@ -466,6 +496,41 @@ email:
 python -m auto_job.cli search
 ```
 
+## Validate sources and run
+
+```bash
+python -m auto_job.cli run
+```
+
+This validates configured RSS feeds and ATS boards first, then runs the normal search workflow.
+
+To inspect source health without running a search:
+
+```bash
+python -m auto_job.cli validate-sources
+```
+
+To show only broken or empty sources:
+
+```bash
+python -m auto_job.cli validate-sources --problems-only
+```
+
+Example validation output:
+
+```text
+Source validation:
+- rss:https://example.com/jobs.rss (Example Feed): ok, 25 jobs
+- greenhouse:exampleco (Example Co): ok, 14 jobs
+- lever:missingco (Missing Co): error, 0 jobs - HTTP 404
+
+Validation summary:
+- error: 1
+- ok: 2
+```
+
+Discovery commands validate detected ATS sources before writing them to `config.yaml`. This keeps dead Greenhouse, Lever, or Ashby slugs from being added during RSS discovery.
+
 The search output includes source and filtering diagnostics:
 
 ```text
@@ -479,6 +544,7 @@ Source summary:
 Filtered out:
 - below minimum score: 4300
 - excluded keyword: senior: 2100
+- outside allowed locations: 1200
 - not remote: 900
 - too old: 20
 ```
@@ -500,6 +566,7 @@ Current test coverage includes:
 - ATS parsing
 - Scoring logic
 - Search diagnostics
+- Source validation
 - CLI write-safety behavior
 - Config writing
 - SQLite persistence
@@ -516,7 +583,6 @@ Potential future directions:
 
 - Improved ATS discovery strategies
 - Additional ATS providers
-- Lever config-writing support
 - Better salary normalization
 - Source adapter tests with mocked HTTP responses
 - Simple SQLite migration/version tracking
