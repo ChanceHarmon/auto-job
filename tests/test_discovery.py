@@ -1,3 +1,5 @@
+"""Tests for turning fetched job URLs into deduped ATS discovery candidates."""
+
 from auto_job.ats import AtsDetectionResult
 from auto_job.discovery import dedupe_discovery_results, get_discovery_urls_from_jobs
 from auto_job.models import Job

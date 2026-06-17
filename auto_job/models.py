@@ -4,6 +4,13 @@ from pydantic import BaseModel, HttpUrl, Field
 
 
 class Job(BaseModel):
+    """Normalized internal job shape shared by every source adapter.
+
+    External providers all return different fields and naming conventions. The
+    rest of the application only works with this model so scoring, storage, and
+    reporting do not need provider-specific conditionals.
+    """
+
     company: str
     title: str
     source: str

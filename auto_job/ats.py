@@ -12,6 +12,8 @@ ATS_PATTERNS = {
 
 def extract_first_matching_url(html: str, pattern: str) -> str | None:
     """Extract the first URL containing the matched ATS pattern."""
+    # Career pages often hide the ATS URL in links, scripts, or redirects. This
+    # loose URL pattern is enough to recover the provider URL for supported ATSs.
     url_pattern = rf"https?://[^\"'\s<>&]*{re.escape(pattern)}[^\"'\s<>&]*"
     match = re.search(url_pattern, html)
 
@@ -50,6 +52,8 @@ def detect_ats_from_text(
 ) -> AtsDetectionResult | None:
     """Detect ATS provider from HTML and final URL text."""
 
+    # Search both the page body and the final redirected URL. Some company
+    # career links redirect straight to the ATS without including links in HTML.
     searchable_text = f"{final_url}\n{html}"
 
     for provider, pattern in ATS_PATTERNS.items():

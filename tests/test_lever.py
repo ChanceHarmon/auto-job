@@ -1,3 +1,5 @@
+"""Tests for Lever date parsing, description building, and API error handling."""
+
 from datetime import date
 
 from auto_job.config import AppConfig

@@ -4,6 +4,9 @@ import yaml
 from pydantic import BaseModel, Field
 
 
+# These Pydantic models define the shape of config.yaml. Keeping config typed
+# makes the rest of the app simpler because source/scoring code can rely on
+# attributes instead of defensive dictionary lookups.
 class SearchConfig(BaseModel):
     keywords: list[str] = Field(default_factory=list)
     locations: list[str] = Field(default_factory=list)
@@ -58,6 +61,7 @@ class AppConfig(BaseModel):
 
 
 def load_config(path: str = "config.yaml") -> AppConfig:
+    """Load YAML config from disk and validate it into typed app settings."""
     config_path = Path(path)
 
     with config_path.open("r", encoding="utf-8") as file:

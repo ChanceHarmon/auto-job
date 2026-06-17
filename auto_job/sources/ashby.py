@@ -26,16 +26,20 @@ META_DESCRIPTION_PATTERN = re.compile(
 )
 MAX_DESCRIPTION_WORKERS = 8
 
+
 def clean_ashby_html(html: str) -> str:
+    """Undo common escaping in Ashby's embedded page data."""
     return html.replace("\\/", "/").replace("&quot;", '"')
 
 
 def parse_ashby_jobs(html: str) -> list[tuple[str, str, str, str, str]]:
+    """Extract listing data from Ashby's rendered careers page HTML."""
     clean_html = clean_ashby_html(html)
     return JOB_PATTERN.findall(clean_html)
 
 
 def parse_ashby_description(html: str) -> str:
+    """Prefer JSON-LD job descriptions, falling back to meta description text."""
     match = JSON_LD_PATTERN.search(html)
 
     if match:
@@ -80,6 +84,7 @@ def fetch_ashby_description(posting_url: str) -> str:
 
 
 def fetch_ashby_descriptions(posting_urls: list[str]) -> dict[str, str]:
+    """Fetch individual posting descriptions concurrently for one Ashby board."""
     if not posting_urls:
         return {}
 
@@ -92,6 +97,7 @@ def fetch_ashby_descriptions(posting_urls: list[str]) -> dict[str, str]:
 
 
 class AshbySource(JobSource):
+    """Fetch Ashby listings and enrich them with per-posting descriptions."""
 
     name = "ashby"
 
@@ -122,6 +128,8 @@ class AshbySource(JobSource):
                 build_ashby_posting_url(company_slug, job_id)
                 for job_id, _, _, _, _ in matches
             ]
+            # The board page has listing metadata, while richer descriptions
+            # live on individual posting pages.
             descriptions_by_url = fetch_ashby_descriptions(posting_urls)
 
             for job_id, title, location, workplace_type, published_date in matches:

@@ -6,6 +6,8 @@ from auto_job.sources.base import JobSource
 
 
 class GreenhouseSource(JobSource):
+    """Fetch and normalize jobs from configured Greenhouse board tokens."""
+
     name = "greenhouse"
 
     API_URL = "https://boards-api.greenhouse.io/v1/boards/{board_token}/jobs?content=true"
@@ -26,6 +28,7 @@ class GreenhouseSource(JobSource):
         jobs: list[Job] = []
 
         for board in self.config.sources.greenhouse_boards:
+            # Each configured board token maps to one company careers board.
             url = self.API_URL.format(board_token=board.board_token)
 
             try:
@@ -57,6 +60,8 @@ class GreenhouseSource(JobSource):
 
             for raw_job in raw_data.get("jobs", []):
                 try:
+                    # Greenhouse gives rich HTML content and a location object;
+                    # normalize both into the shared Job model.
                     location = raw_job.get("location") or {}
                     location_name = location.get("name")
                     remote_status = self.detect_remote_status(location_name)

@@ -43,6 +43,7 @@ def build_remoteok_description(raw_job: dict) -> str:
 
 
 def normalize_remoteok_job(raw_job: dict) -> Job:
+    """Convert one RemoteOK API row into the shared Job model."""
     return Job(
         company=raw_job.get("company") or "Unknown",
         title=raw_job.get("position") or "Unknown",
@@ -57,6 +58,8 @@ def normalize_remoteok_job(raw_job: dict) -> Job:
 
 
 class RemoteOKSource(JobSource):
+    """Fetch and normalize jobs from RemoteOK's public API."""
+
     name = "remoteok"
 
     API_URL = "https://remoteok.com/api"
@@ -76,6 +79,7 @@ class RemoteOKSource(JobSource):
 
         jobs: list[Job] = []
 
+        # RemoteOK's first response row is API metadata, not an actual job.
         for raw_job in raw_jobs[1:]:
             try:
                 job = normalize_remoteok_job(raw_job)

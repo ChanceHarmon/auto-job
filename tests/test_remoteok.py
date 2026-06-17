@@ -1,3 +1,5 @@
+"""Tests for RemoteOK normalization and API response handling."""
+
 from datetime import date
 
 from auto_job.config import AppConfig
