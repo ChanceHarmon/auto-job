@@ -1,6 +1,7 @@
 from auto_job.config import AppConfig
 from auto_job.models import Job
 from datetime import date, timedelta
+import re
 
 
 US_LOCATION_TERMS = {
@@ -45,6 +46,33 @@ CANADA_LOCATION_TERMS = {
 
 IGNORED_LOCATION_TERMS = {"remote"}
 TITLE_PENALTY_POINTS = 20
+
+
+def title_keyword_variants(keyword: str) -> list[str]:
+    normalized_keyword = keyword.lower().strip()
+
+    if normalized_keyword == "senior":
+        return ["senior", "sr"]
+
+    return [normalized_keyword]
+
+
+def title_matches_keyword(title_text: str, keyword: str) -> bool:
+    for variant in title_keyword_variants(keyword):
+        compact_variant = re.sub(r"[^a-z0-9]", "", variant)
+
+        if len(compact_variant) <= 3:
+            pattern = rf"(?<![a-z0-9]){re.escape(variant)}(?![a-z0-9])"
+
+            if re.search(pattern, title_text):
+                return True
+
+            continue
+
+        if variant in title_text:
+            return True
+
+    return False
 
 
 def get_allowed_location_terms(config: AppConfig) -> set[str]:
@@ -102,7 +130,7 @@ def score_job(job: Job, config: AppConfig) -> int:
 
     # Hard exclude unwanted job titles before scoring
     for excluded in config.filters.excluded_keywords:
-        if excluded.lower() in title_text:
+        if title_matches_keyword(title_text, excluded):
             job.match_score = 0
             job.match_reasons = [f"excluded keyword: {excluded}"]
             return 0
@@ -161,7 +189,7 @@ def score_job(job: Job, config: AppConfig) -> int:
 
     # Title penalties nudge weak-fit roles down without hard excluding them
     for penalty_keyword in config.filters.penalty_keywords:
-        if penalty_keyword.lower() in title_text:
+        if title_matches_keyword(title_text, penalty_keyword):
             score -= TITLE_PENALTY_POINTS
             reasons.append(f"title penalty: {penalty_keyword}")
 

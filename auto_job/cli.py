@@ -91,6 +91,10 @@ def print_source_validation_results(results, problems_only: bool = False):
         print(f"- {status}: {count}")
 
 
+def print_validation_progress(provider: str, company: str, identifier: str):
+    print(f"Validating {provider}: {company} ({identifier})...")
+
+
 def run_search_workflow(app_config):
     result = run_job_search(app_config)
 
@@ -102,16 +106,24 @@ def run_search_workflow(app_config):
 
     print_jobs(result.jobs, 20)
 
+    print("Generating report...")
     report = build_text_report(result.jobs)
 
+    print("Saving report...")
     report_path = save_text_report(report)
     print(f"\nSaved report to {report_path}")
 
-    send_report_email(
+    if app_config.email.enabled:
+        print("Sending email...")
+
+    email_sent = send_report_email(
         report,
         app_config,
         subject=f"Auto-job report: {len(result.jobs)} matches",
     )
+
+    if email_sent:
+        print("Email sent")
 
 
 def print_config_snippet(result):
@@ -171,7 +183,10 @@ def validate_sources_command(problems_only: bool = False):
     """Validate configured job sources and print current job counts."""
     app_config = load_config()
 
-    results = validate_sources(app_config)
+    results = validate_sources(
+        app_config,
+        progress_callback=print_validation_progress,
+    )
     print_source_validation_results(results, problems_only=problems_only)
 
 
@@ -181,7 +196,10 @@ def run(validate: bool = True):
     app_config = load_config()
 
     if validate:
-        results = validate_sources(app_config)
+        results = validate_sources(
+            app_config,
+            progress_callback=print_validation_progress,
+        )
         print_source_validation_results(results)
 
     run_search_workflow(app_config)

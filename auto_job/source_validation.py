@@ -192,19 +192,31 @@ def validate_ashby_company(company_config) -> SourceValidationResult:
     )
 
 
-def validate_sources(app_config: AppConfig) -> list[SourceValidationResult]:
+def validate_sources(app_config: AppConfig, progress_callback=None) -> list[SourceValidationResult]:
     results = []
 
     for feed_config in app_config.sources.rss_feeds:
+        if progress_callback:
+            progress_callback("rss", feed_config.name, feed_config.url)
+
         results.append(validate_rss_feed(feed_config))
 
     for board_config in app_config.sources.greenhouse_boards:
+        if progress_callback:
+            progress_callback("greenhouse", board_config.company, board_config.board_token)
+
         results.append(validate_greenhouse_board(board_config))
 
     for company_config in app_config.sources.lever_companies:
+        if progress_callback:
+            progress_callback("lever", company_config.company, company_config.company_slug)
+
         results.append(validate_lever_company(company_config))
 
     for company_config in app_config.sources.ashby_companies:
+        if progress_callback:
+            progress_callback("ashby", company_config.company, company_config.company_slug)
+
         results.append(validate_ashby_company(company_config))
 
     return results

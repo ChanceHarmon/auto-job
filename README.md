@@ -388,6 +388,9 @@ filters:
     - senior
     - staff
     - principal
+    - machine learning
+    - ml
+    - it
 
   penalty_keywords:
     - intern
@@ -421,6 +424,8 @@ Configuration controls:
 `config.yaml` is intentionally ignored by git so personal job preferences, target companies, and email settings stay local.
 
 `remote_only` and `search.locations` work together. `remote_only: true` filters out non-remote roles. `search.locations` then limits remote roles to allowed geographies, such as `united states` and `canada`. A generic `remote` location is not treated as an allowed geography by itself, because many boards use it for roles that may be remote outside North America.
+
+Short title filters such as `it`, `ml`, and `sr` match as standalone title terms so they do not accidentally match inside unrelated words. The `senior` exclude also catches common `Sr.` title abbreviations.
 
 ---
 

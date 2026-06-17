@@ -1,11 +1,12 @@
 import httpx
 
-from auto_job.config import GreenhouseBoardConfig
+from auto_job.config import AppConfig, GreenhouseBoardConfig
 from auto_job.ats import AtsDetectionResult
 from auto_job.source_validation import (
     SourceValidationResult,
     validate_discovery_result,
     validate_greenhouse_board,
+    validate_sources,
 )
 
 
@@ -104,3 +105,42 @@ def test_validate_discovery_result_requires_company_slug():
 
     assert result.status == "error"
     assert result.message == "missing company slug"
+
+
+def test_validate_sources_reports_progress(monkeypatch):
+    progress_calls = []
+    app_config = AppConfig.model_validate(
+        {
+            "search": {},
+            "filters": {},
+            "sources": {
+                "enabled": [],
+                "greenhouse_boards": [
+                    {
+                        "company": "Example Co",
+                        "board_token": "example",
+                    }
+                ],
+            },
+        }
+    )
+
+    monkeypatch.setattr(
+        "auto_job.source_validation.validate_greenhouse_board",
+        lambda board_config: SourceValidationResult(
+            provider="greenhouse",
+            company=board_config.company,
+            identifier=board_config.board_token,
+            status="ok",
+            job_count=1,
+        ),
+    )
+
+    validate_sources(
+        app_config,
+        progress_callback=lambda provider, company, identifier: progress_calls.append(
+            (provider, company, identifier)
+        ),
+    )
+
+    assert progress_calls == [("greenhouse", "Example Co", "example")]
