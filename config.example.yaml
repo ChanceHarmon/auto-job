@@ -19,6 +19,9 @@ filters:
     - senior
     - staff
     - principal
+    - machine learning
+    - ml
+    - it
 
   penalty_keywords:
     - intern

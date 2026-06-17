@@ -103,6 +103,73 @@ def test_excluded_keyword_in_description_does_not_return_zero_score():
     assert "excluded keyword: senior" not in job.match_reasons
 
 
+def test_senior_excluded_keyword_matches_sr_title_abbreviation():
+    app_config = build_test_config()
+
+    job = Job(
+        company="Example Co",
+        title="Sr. Software Engineer II",
+        source="test",
+        posting_url="https://example.com/job",
+        location="Remote",
+        remote_status="remote",
+        description="Python APIs PostgreSQL",
+    )
+
+    score = score_job(job, app_config)
+
+    assert score == 0
+    assert "excluded keyword: senior" in job.match_reasons
+
+
+def test_short_excluded_keyword_matches_title_token_only():
+    app_config = build_test_config()
+    app_config.filters.excluded_keywords = ["it"]
+
+    matching_job = Job(
+        company="Example Co",
+        title="IT Systems Engineer",
+        source="test",
+        posting_url="https://example.com/job",
+        location="Remote",
+        remote_status="remote",
+        description="Python APIs PostgreSQL",
+    )
+    non_matching_job = Job(
+        company="Example Co",
+        title="Site Reliability Engineer",
+        source="test",
+        posting_url="https://example.com/job",
+        location="Remote",
+        remote_status="remote",
+        description="Python APIs PostgreSQL",
+    )
+
+    assert score_job(matching_job, app_config) == 0
+    assert "excluded keyword: it" in matching_job.match_reasons
+    assert score_job(non_matching_job, app_config) > 0
+
+
+def test_machine_learning_title_can_be_excluded():
+    app_config = build_test_config()
+    app_config.filters.excluded_keywords = ["machine learning"]
+
+    job = Job(
+        company="Example Co",
+        title="Machine Learning Engineer",
+        source="test",
+        posting_url="https://example.com/job",
+        location="Remote",
+        remote_status="remote",
+        description="Python APIs PostgreSQL",
+    )
+
+    score = score_job(job, app_config)
+
+    assert score == 0
+    assert "excluded keyword: machine learning" in job.match_reasons
+
+
 def test_onsite_job_returns_zero_when_remote_only_enabled():
     app_config = build_test_config()
 

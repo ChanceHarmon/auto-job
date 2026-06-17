@@ -14,22 +14,22 @@ def send_report_email(
     report: str,
     config: AppConfig,
     subject: str = "Auto-job report",
-) -> None:
+) -> bool:
     """Send a plain-text job report email."""
 
     if not config.email.enabled:
         print("Email is disabled in config.yaml")
-        return
+        return False
 
     if not config.email.to or not config.email.from_email:
         print("Missing email.to or email.from_email in config.yaml")
-        return
+        return False
 
     password = os.getenv("AUTO_JOB_EMAIL_PASSWORD")
 
     if not password:
         print("Missing AUTO_JOB_EMAIL_PASSWORD environment variable")
-        return
+        return False
 
     message = EmailMessage()
     message["Subject"] = subject
@@ -41,3 +41,5 @@ def send_report_email(
         smtp.starttls()
         smtp.login(config.email.from_email, password)
         smtp.send_message(message)
+
+    return True

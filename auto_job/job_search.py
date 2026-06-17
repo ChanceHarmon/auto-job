@@ -113,8 +113,10 @@ def run_job_search(app_config) -> JobSearchResult:
     """Run the full job search pipeline."""
     jobs, source_fetch_counts = fetch_jobs_from_sources(app_config)
 
+    print("Scoring and filtering jobs...")
     matched_jobs, source_match_counts, filter_counts = score_and_filter_jobs(jobs, app_config)
 
+    print("Deduplicating matches...")
     matched_jobs = dedupe_jobs(matched_jobs)
     deduped_count = sum(source_match_counts.values()) - len(matched_jobs)
 
@@ -123,6 +125,7 @@ def run_job_search(app_config) -> JobSearchResult:
         reverse=True
     )
 
+    print("Saving matches to SQLite...")
     init_db()
     saved_count = save_jobs(matched_jobs)
 

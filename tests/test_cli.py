@@ -79,7 +79,7 @@ def test_validate_sources_command_prints_results(monkeypatch):
     monkeypatch.setattr(
         cli,
         "validate_sources",
-        lambda app_config: [
+        lambda app_config, progress_callback=None: [
             SourceValidationResult(
                 provider="greenhouse",
                 company="Example Co",
@@ -107,7 +107,7 @@ def test_validate_sources_command_can_show_only_problems(monkeypatch):
     monkeypatch.setattr(
         cli,
         "validate_sources",
-        lambda app_config: [
+        lambda app_config, progress_callback=None: [
             SourceValidationResult(
                 provider="greenhouse",
                 company="Healthy Co",
@@ -144,7 +144,7 @@ def test_run_command_validates_then_runs_search_workflow(monkeypatch):
     monkeypatch.setattr(
         cli,
         "validate_sources",
-        lambda app_config: calls.append("validate") or [],
+        lambda app_config, progress_callback=None: calls.append("validate") or [],
     )
     monkeypatch.setattr(
         cli,
