@@ -71,7 +71,7 @@ Current supported sources:
 - RemoteOK API
 - Greenhouse boards
 - Ashby boards
-- Lever support (partial/in progress)
+- Lever postings API
 
 The system normalizes heterogeneous job data into a shared internal `Job` model.
 
@@ -139,6 +139,7 @@ Jobs are scored using configurable heuristics including:
 - Preferred technology stack
 - Remote status
 - Allowed locations
+- Title penalties
 
 Hard filters include:
 
@@ -388,6 +389,11 @@ filters:
     - staff
     - principal
 
+  penalty_keywords:
+    - intern
+    - internship
+    - phd intern
+
   preferred_stack:
     - python
     - django
@@ -407,6 +413,7 @@ Configuration controls:
 - `search.remote_only`: excludes non-remote jobs when enabled
 - `search.recency_days`: excludes old postings when dates are available
 - `filters.excluded_keywords`: hard excludes jobs when these words appear in the title
+- `filters.penalty_keywords`: subtracts score when these words appear in the title
 - `filters.preferred_stack`: adds score for preferred technologies
 - `filters.minimum_score`: minimum score required before saving/reporting
 - `sources.enabled`: source adapters to run during `search`

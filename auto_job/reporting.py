@@ -5,7 +5,7 @@ import re
 
 from auto_job.models import Job
 
-DESCRIPTION_PREVIEW_LENGTH = 1000
+DESCRIPTION_PREVIEW_LENGTH = 2000
 
 
 def clean_description(description: str) -> str:
@@ -18,16 +18,19 @@ def clean_description(description: str) -> str:
     return description
 
 
-def build_text_report(jobs: list[Job], limit: int = 10) -> str:
+def build_text_report(jobs: list[Job], limit: int = 20) -> str:
     lines = []
 
     lines.append("=" * 50)
     lines.append("AUTO-JOB REPORT")
     lines.append("=" * 50)
+    lines.append(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+    lines.append(f"Showing: {min(len(jobs), limit)} of {len(jobs)} matches")
     lines.append("")
 
-    for job in jobs[:limit]:
-        lines.append(f"{job.match_score} | {job.title} @ {job.company}")
+    for index, job in enumerate(jobs[:limit], start=1):
+        lines.append("-" * 50)
+        lines.append(f"{index}. {job.match_score} | {job.title} @ {job.company}")
         lines.append(f"Source: {job.source}")
 
         if job.location:
@@ -55,7 +58,7 @@ def build_text_report(jobs: list[Job], limit: int = 10) -> str:
 
             lines.append(f"Description: {description}")
 
-        lines.append(str(job.posting_url))
+        lines.append(f"Apply: {job.posting_url}")
         lines.append("")
 
     return "\n".join(lines)

@@ -100,14 +100,18 @@ def run_search_workflow(app_config):
     print_search_diagnostics(result)
     print()
 
-    print_jobs(result.jobs, 10)
+    print_jobs(result.jobs, 20)
 
-    report = build_text_report(result.jobs, 20)
+    report = build_text_report(result.jobs)
 
     report_path = save_text_report(report)
     print(f"\nSaved report to {report_path}")
 
-    send_report_email(report, app_config)
+    send_report_email(
+        report,
+        app_config,
+        subject=f"Auto-job report: {len(result.jobs)} matches",
+    )
 
 
 def print_config_snippet(result):

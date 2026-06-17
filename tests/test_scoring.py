@@ -196,3 +196,34 @@ def test_matching_remote_job_gets_positive_score():
     assert score > 0
     assert "python" in job.detected_stack
     assert "preferred stack: python" in job.match_reasons
+
+
+def test_penalty_keyword_reduces_score_without_excluding_job():
+    app_config = build_test_config()
+    app_config.filters.penalty_keywords = ["intern"]
+
+    normal_job = Job(
+        company="Example Co",
+        title="Backend Engineer",
+        source="test",
+        posting_url="https://example.com/job",
+        location="Remote",
+        remote_status="remote",
+        description="Python APIs PostgreSQL",
+    )
+    penalty_job = Job(
+        company="Example Co",
+        title="Backend Engineer Intern",
+        source="test",
+        posting_url="https://example.com/job",
+        location="Remote",
+        remote_status="remote",
+        description="Python APIs PostgreSQL",
+    )
+
+    normal_score = score_job(normal_job, app_config)
+    penalty_score = score_job(penalty_job, app_config)
+
+    assert penalty_score == normal_score - 20
+    assert penalty_score > 0
+    assert "title penalty: intern" in penalty_job.match_reasons
