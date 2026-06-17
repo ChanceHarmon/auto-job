@@ -20,6 +20,11 @@ filters:
     - staff
     - principal
 
+  penalty_keywords:
+    - intern
+    - internship
+    - phd intern
+
   preferred_stack:
     - python
     - django

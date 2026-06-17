@@ -44,6 +44,7 @@ CANADA_LOCATION_TERMS = {
 }
 
 IGNORED_LOCATION_TERMS = {"remote"}
+TITLE_PENALTY_POINTS = 20
 
 
 def get_allowed_location_terms(config: AppConfig) -> set[str]:
@@ -157,6 +158,12 @@ def score_job(job: Job, config: AppConfig) -> int:
             score += 5
             detected_stack.append(tech)
             reasons.append(f"preferred stack: {tech}")
+
+    # Title penalties nudge weak-fit roles down without hard excluding them
+    for penalty_keyword in config.filters.penalty_keywords:
+        if penalty_keyword.lower() in title_text:
+            score -= TITLE_PENALTY_POINTS
+            reasons.append(f"title penalty: {penalty_keyword}")
 
     # Remote boost
     if job.remote_status == "remote":
