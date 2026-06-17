@@ -1,3 +1,5 @@
+"""CLI tests for command behavior without touching real config or network."""
+
 from typer.testing import CliRunner
 
 from auto_job import cli

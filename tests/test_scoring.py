@@ -1,3 +1,5 @@
+"""Tests for ranking, hard filters, penalties, and scoring explanations."""
+
 from auto_job.models import Job
 from auto_job.scoring import score_job
 from auto_job.config import AppConfig

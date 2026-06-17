@@ -1,3 +1,5 @@
+"""Tests for SQLite persistence and saved match metadata."""
+
 from datetime import date
 
 from auto_job import storage

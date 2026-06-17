@@ -17,6 +17,8 @@ def send_report_email(
 ) -> bool:
     """Send a plain-text job report email."""
 
+    # Return False for configuration issues instead of raising so a daily run
+    # can still save the report locally even when email is disabled or mis-set.
     if not config.email.enabled:
         print("Email is disabled in config.yaml")
         return False
@@ -37,6 +39,8 @@ def send_report_email(
     message["To"] = config.email.to
     message.set_content(report)
 
+    # SMTP is intentionally plain and local-config driven; the app does not
+    # store credentials, only reads the app password from the environment.
     with smtplib.SMTP(config.email.smtp_host, config.email.smtp_port) as smtp:
         smtp.starttls()
         smtp.login(config.email.from_email, password)

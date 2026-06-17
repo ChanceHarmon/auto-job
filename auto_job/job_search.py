@@ -9,6 +9,8 @@ from auto_job.storage import init_db, save_jobs
 
 @dataclass
 class JobSearchResult:
+    """Search output plus diagnostics used by CLI reports."""
+
     jobs: list[Job]
     saved_count: int
     source_fetch_counts: dict[str, int]
@@ -18,6 +20,7 @@ class JobSearchResult:
 
 
 def get_source_key(job: Job) -> str:
+    """Collapse source variants like rss:Feed Name into a source family."""
     return job.source.split(":", 1)[0]
 
 
@@ -48,6 +51,7 @@ def fetch_jobs_from_sources(app_config) -> tuple[list[Job], dict[str, int]]:
 
 
 def get_filter_reason(job: Job, score: int, minimum_score: int) -> str:
+    """Choose the most useful diagnostic reason for a rejected job."""
     if score >= minimum_score:
         return ""
 
@@ -76,6 +80,8 @@ def score_and_filter_jobs(
         score = score_job(job, app_config)
         job.match_score = score
 
+        # Keep the detailed source counts separate from the final dedupe step
+        # so diagnostics can show how noisy or productive each provider was.
         if score >= app_config.filters.minimum_score:
             matched_jobs.append(job)
             source_key = get_source_key(job)
@@ -120,6 +126,8 @@ def run_job_search(app_config) -> JobSearchResult:
     matched_jobs = dedupe_jobs(matched_jobs)
     deduped_count = sum(source_match_counts.values()) - len(matched_jobs)
 
+    # Final ordering happens after dedupe so the CLI/report can simply take the
+    # first N jobs.
     matched_jobs.sort(
         key=lambda job: job.match_score,
         reverse=True

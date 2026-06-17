@@ -1,3 +1,5 @@
+"""Tests for report formatting and useful job description snippets."""
+
 from auto_job.models import Job
 from auto_job.reporting import (
     DESCRIPTION_PREVIEW_LENGTH,

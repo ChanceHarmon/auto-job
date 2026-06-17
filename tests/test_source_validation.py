@@ -1,3 +1,5 @@
+"""Tests for source health checks and validated ATS discovery results."""
+
 import httpx
 
 from auto_job.config import AppConfig, GreenhouseBoardConfig

@@ -1,5 +1,8 @@
 import yaml
 
+
+# Discovery writes back into the same user-owned config.yaml file. These helper
+# builders keep generated entries consistent with hand-written config entries.
 def build_greenhouse_board_config(
     company: str,
     board_token: str,
@@ -64,6 +67,8 @@ def add_greenhouse_board(
     with open(config_path, "r", encoding="utf-8") as file:
         config_data = yaml.safe_load(file)
 
+    # Use the provider identifier as the dedupe key because company display
+    # names can vary while board tokens/slugs are stable.
     boards = config_data["sources"].setdefault(
         "greenhouse_boards",
         []
@@ -105,6 +110,8 @@ def add_ashby_company(
     with open(config_path, "r", encoding="utf-8") as file:
         config_data = yaml.safe_load(file)
 
+    # Ashby and Lever use company_slug rather than board_token, but the write
+    # flow mirrors Greenhouse: read config, skip duplicates, append, write back.
     companies = config_data["sources"].setdefault(
         "ashby_companies",
         []

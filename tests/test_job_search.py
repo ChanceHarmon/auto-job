@@ -1,3 +1,5 @@
+"""Tests for search diagnostics, filtering, and source match counts."""
+
 from auto_job.config import AppConfig
 from auto_job.job_search import score_and_filter_jobs
 from auto_job.models import Job

@@ -15,6 +15,8 @@ from auto_job.sources.ashby import parse_ashby_jobs
 
 @dataclass
 class SourceValidationResult:
+    """Provider health check result shown by validate-sources."""
+
     provider: str
     company: str
     identifier: str
@@ -24,6 +26,7 @@ class SourceValidationResult:
 
 
 def validate_discovery_result(result: AtsDetectionResult) -> SourceValidationResult:
+    """Validate one discovered ATS source before writing it to config.yaml."""
     if not result.company_slug:
         return SourceValidationResult(
             provider=result.provider,
@@ -69,6 +72,7 @@ def validate_discovery_result(result: AtsDetectionResult) -> SourceValidationRes
 
 
 def validate_rss_feed(feed_config) -> SourceValidationResult:
+    """Check that an RSS feed parses and currently returns entries."""
     feed = feedparser.parse(feed_config.url)
     job_count = len(feed.entries)
 
@@ -88,6 +92,7 @@ def validate_rss_feed(feed_config) -> SourceValidationResult:
 
 
 def validate_greenhouse_board(board_config) -> SourceValidationResult:
+    """Check that a Greenhouse board token resolves to jobs."""
     url = (
         "https://boards-api.greenhouse.io/v1/boards/"
         f"{board_config.board_token}/jobs?content=false"
@@ -125,6 +130,7 @@ def validate_greenhouse_board(board_config) -> SourceValidationResult:
 
 
 def validate_lever_company(company_config) -> SourceValidationResult:
+    """Check that a Lever company slug resolves to postings."""
     url = f"https://api.lever.co/v0/postings/{company_config.company_slug}?mode=json"
 
     try:
@@ -159,6 +165,7 @@ def validate_lever_company(company_config) -> SourceValidationResult:
 
 
 def validate_ashby_company(company_config) -> SourceValidationResult:
+    """Check that an Ashby careers page is reachable and parseable."""
     url = f"https://jobs.ashbyhq.com/{company_config.company_slug}"
 
     try:
@@ -193,6 +200,7 @@ def validate_ashby_company(company_config) -> SourceValidationResult:
 
 
 def validate_sources(app_config: AppConfig, progress_callback=None) -> list[SourceValidationResult]:
+    """Validate every configured source, optionally reporting progress."""
     results = []
 
     for feed_config in app_config.sources.rss_feeds:

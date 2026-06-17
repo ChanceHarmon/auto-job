@@ -16,6 +16,8 @@ from auto_job.source_validation import validate_discovery_result, validate_sourc
 app = typer.Typer()
 
 
+# CLI commands stay thin: they load config, call application helpers, and format
+# progress/results for the user.
 @app.command()
 def config():
     """Show loaded config."""
@@ -96,6 +98,7 @@ def print_validation_progress(provider: str, company: str, identifier: str):
 
 
 def run_search_workflow(app_config, limit: int = 20):
+    """Shared search/report/email workflow used by search and run commands."""
     result = run_job_search(app_config)
 
     print(f"\nMatched {len(result.jobs)} jobs")
@@ -127,6 +130,7 @@ def run_search_workflow(app_config, limit: int = 20):
 
 
 def print_config_snippet(result):
+    """Print YAML the user can copy when ATS detection finds a source."""
     provider_config = {
         "greenhouse": ("greenhouse_boards", "board_token"),
         "lever": ("lever_companies", "company_slug"),
@@ -254,6 +258,7 @@ def discover_ats(
 
         validation_result = None
         if validate:
+            # Validation keeps discovery from writing dead slugs into config.
             validation_result = validate_discovery_result(result)
             print(
                 "Validation: "
@@ -284,6 +289,7 @@ def discover_from_rss(write: bool = False, validate: bool = True):
     jobs = rss_source.fetch_jobs()
     print(f"Fetched {len(jobs)} RSS jobs")
 
+    # RSS job links are used as a discovery seed for company ATS pages.
     urls = get_discovery_urls_from_jobs(jobs)
     print(f"Extracted {len(urls)} URLs")
 

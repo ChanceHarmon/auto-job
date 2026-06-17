@@ -27,6 +27,7 @@ def clean_description(description: str) -> str:
 
 
 def extract_description_snippet(description: str) -> str:
+    """Prefer useful sections before falling back to the start of the posting."""
     description = clean_description(description)
 
     if len(description) <= DESCRIPTION_PREVIEW_LENGTH:
@@ -40,6 +41,8 @@ def extract_description_snippet(description: str) -> str:
     ]
 
     if heading_positions:
+        # Long postings often start with company marketing copy. Starting from
+        # Requirements/Responsibilities makes the email more actionable.
         start_index, _heading = min(heading_positions)
         snippet = description[start_index:start_index + DESCRIPTION_PREVIEW_LENGTH]
         return snippet + "..."
@@ -48,6 +51,7 @@ def extract_description_snippet(description: str) -> str:
 
 
 def build_text_report(jobs: list[Job], limit: int = 20) -> str:
+    """Build the plain-text report used for both saved files and email."""
     lines = []
 
     lines.append("=" * 50)

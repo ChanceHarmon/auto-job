@@ -11,6 +11,8 @@ def discover_ats_from_job_urls(
 
     for url in urls:
         try:
+            # Discovery is best-effort: one bad URL should not stop the rest of
+            # the feed from producing useful provider candidates.
             result = detect_ats_provider(url)
 
             if result:
@@ -31,6 +33,7 @@ def dedupe_discovery_results(
     unique_results = []
 
     for result in results:
+        # Provider + slug uniquely identifies the source we would write.
         key = (result.provider, result.company_slug)
 
         if key in seen:

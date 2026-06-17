@@ -24,6 +24,7 @@ def detect_lever_remote_status(location: str | None) -> str:
 
 
 def build_lever_description(posting: dict) -> str:
+    """Combine Lever's split description/list fields into one reportable body."""
     description_parts = []
 
     description_plain = posting.get("descriptionPlain")
@@ -57,6 +58,7 @@ def build_lever_description(posting: dict) -> str:
 
 
 def normalize_lever_posting(company: str, posting: dict) -> Job:
+    """Convert one Lever posting response into the shared Job model."""
     categories = posting.get("categories") or {}
     location = categories.get("location")
 
@@ -73,6 +75,7 @@ def normalize_lever_posting(company: str, posting: dict) -> Job:
 
 
 class LeverSource(JobSource):
+    """Fetch and normalize jobs from configured Lever company slugs."""
 
     name = "lever"
 
@@ -86,7 +89,6 @@ class LeverSource(JobSource):
         )
 
         for company_config in lever_companies:
-
             company = company_config.company
             company_slug = company_config.company_slug
 
@@ -128,7 +130,6 @@ class LeverSource(JobSource):
                 continue
 
             for posting in postings:
-
                 job = normalize_lever_posting(company, posting)
 
                 jobs.append(job)

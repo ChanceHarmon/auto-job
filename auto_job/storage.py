@@ -10,10 +10,12 @@ DB_PATH = Path("auto_job.db")
 
 
 def get_connection():
+    """Create a SQLite connection using the current DB path."""
     return sqlite3.connect(DB_PATH)
 
 
 def ensure_column(connection, table_name: str, column_name: str, column_definition: str):
+    """Add a column if an older local database does not have it yet."""
     columns = connection.execute(f"PRAGMA table_info({table_name})").fetchall()
     column_names = {column[1] for column in columns}
 
@@ -24,6 +26,7 @@ def ensure_column(connection, table_name: str, column_name: str, column_definiti
 
 
 def init_db():
+    """Create the jobs table and apply lightweight additive migrations."""
     with get_connection() as connection:
         connection.execute(
             """
@@ -45,11 +48,15 @@ def init_db():
             )
             """
         )
+        # These columns were added after the first table version. Adding them
+        # here lets existing local databases keep working without a formal
+        # migration framework.
         ensure_column(connection, "jobs", "detected_stack", "TEXT")
         ensure_column(connection, "jobs", "match_reasons", "TEXT")
 
 
 def save_job(job: Job) -> bool:
+    """Persist one job, returning True only when it was newly inserted."""
     with get_connection() as connection:
         cursor = connection.execute(
             """
@@ -89,6 +96,7 @@ def save_job(job: Job) -> bool:
 
 
 def save_jobs(jobs: list[Job]) -> int:
+    """Persist a batch of matched jobs and count newly inserted records."""
     saved_count = 0
 
     for job in jobs:
@@ -101,6 +109,7 @@ def save_jobs(jobs: list[Job]) -> int:
 
 
 def get_recent_jobs(limit: int = 20) -> list[Job]:
+    """Return saved jobs ordered for quick review in the CLI."""
     with get_connection() as connection:
         rows = connection.execute(
             """

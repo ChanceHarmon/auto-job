@@ -1,3 +1,5 @@
+"""Tests for Ashby parsing, description fetching, and source normalization."""
+
 from auto_job.sources.ashby import (
     AshbySource,
     build_ashby_posting_url,

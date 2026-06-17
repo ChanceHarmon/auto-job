@@ -1,3 +1,5 @@
+"""Tests for safe config.yaml writes used by ATS discovery commands."""
+
 import yaml
 
 from auto_job.config_writer import (

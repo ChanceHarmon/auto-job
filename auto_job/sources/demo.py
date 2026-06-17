@@ -3,6 +3,8 @@ from auto_job.sources.base import JobSource
 
 
 class DemoSource(JobSource):
+    """Small in-memory source useful for manual experiments."""
+
     name = "demo"
 
     def fetch_jobs(self) -> list[Job]:

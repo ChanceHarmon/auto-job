@@ -21,6 +21,8 @@ def parse_rss_entry_date(entry) -> date | None:
 
 
 class RSSSource(JobSource):
+    """Fetch jobs from configured RSS/Atom feeds."""
+
     name = "rss"
 
     def fetch_jobs(self) -> list[Job]:
@@ -34,6 +36,8 @@ class RSSSource(JobSource):
                     raw_title = entry.get("title", "Unknown")
 
                     if ":" in raw_title:
+                        # Some feeds publish titles as "Company: Role"; split
+                        # that into separate normalized fields when available.
                         company, title = raw_title.split(":", 1)
                         company = company.strip()
                         title = title.strip()
