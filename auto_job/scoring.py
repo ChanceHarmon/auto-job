@@ -46,6 +46,7 @@ CANADA_LOCATION_TERMS = {
 
 IGNORED_LOCATION_TERMS = {"remote"}
 TITLE_PENALTY_POINTS = 20
+PREFERRED_TITLE_POINTS = 20
 
 
 def title_keyword_variants(keyword: str) -> list[str]:
@@ -186,6 +187,12 @@ def score_job(job: Job, config: AppConfig) -> int:
             score += 5
             detected_stack.append(tech)
             reasons.append(f"preferred stack: {tech}")
+
+    # Preferred title matches boost roles that are especially aligned
+    for preferred_title in config.filters.preferred_titles:
+        if title_matches_keyword(title_text, preferred_title):
+            score += PREFERRED_TITLE_POINTS
+            reasons.append(f"preferred title: {preferred_title}")
 
     # Title penalties nudge weak-fit roles down without hard excluding them
     for penalty_keyword in config.filters.penalty_keywords:

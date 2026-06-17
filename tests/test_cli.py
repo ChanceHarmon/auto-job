@@ -149,13 +149,33 @@ def test_run_command_validates_then_runs_search_workflow(monkeypatch):
     monkeypatch.setattr(
         cli,
         "run_search_workflow",
-        lambda app_config: calls.append("search"),
+        lambda app_config, limit=20: calls.append("search"),
     )
 
     result = runner.invoke(cli.app, ["run"])
 
     assert result.exit_code == 0
     assert calls == ["validate", "search"]
+
+
+def test_run_command_passes_limit_to_search_workflow(monkeypatch):
+    calls = []
+
+    monkeypatch.setattr(
+        cli,
+        "load_config",
+        lambda: object(),
+    )
+    monkeypatch.setattr(
+        cli,
+        "run_search_workflow",
+        lambda app_config, limit=20: calls.append(limit),
+    )
+
+    result = runner.invoke(cli.app, ["run", "--no-validate", "--limit", "30"])
+
+    assert result.exit_code == 0
+    assert calls == [30]
 
 
 def test_guide_command_prints_recommended_workflow():

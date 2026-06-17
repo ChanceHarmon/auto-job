@@ -1,5 +1,9 @@
 from auto_job.models import Job
-from auto_job.reporting import DESCRIPTION_PREVIEW_LENGTH, build_text_report
+from auto_job.reporting import (
+    DESCRIPTION_PREVIEW_LENGTH,
+    build_text_report,
+    extract_description_snippet,
+)
 
 
 def build_job(index: int, description: str = "Python APIs") -> Job:
@@ -34,3 +38,15 @@ def test_text_report_uses_longer_description_preview():
     assert f"Description: {'x' * DESCRIPTION_PREVIEW_LENGTH}..." in report
     assert f"{'x' * (DESCRIPTION_PREVIEW_LENGTH + 1)}" not in report
     assert "Apply: https://example.com/jobs/1" in report
+
+
+def test_description_snippet_prefers_requirements_section():
+    description = (
+        f"{'intro ' * 600}"
+        "Requirements Python APIs PostgreSQL production systems"
+    )
+
+    snippet = extract_description_snippet(description)
+
+    assert snippet.startswith("Requirements Python APIs")
+    assert "intro intro intro" not in snippet

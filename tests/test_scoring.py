@@ -294,3 +294,33 @@ def test_penalty_keyword_reduces_score_without_excluding_job():
     assert penalty_score == normal_score - 20
     assert penalty_score > 0
     assert "title penalty: intern" in penalty_job.match_reasons
+
+
+def test_preferred_title_keyword_boosts_score():
+    app_config = build_test_config()
+    app_config.filters.preferred_titles = ["platform"]
+
+    normal_job = Job(
+        company="Example Co",
+        title="Software Engineer",
+        source="test",
+        posting_url="https://example.com/job",
+        location="Remote",
+        remote_status="remote",
+        description="Python APIs PostgreSQL",
+    )
+    preferred_job = Job(
+        company="Example Co",
+        title="Platform Software Engineer",
+        source="test",
+        posting_url="https://example.com/job",
+        location="Remote",
+        remote_status="remote",
+        description="Python APIs PostgreSQL",
+    )
+
+    normal_score = score_job(normal_job, app_config)
+    preferred_score = score_job(preferred_job, app_config)
+
+    assert preferred_score == normal_score + 20
+    assert "preferred title: platform" in preferred_job.match_reasons

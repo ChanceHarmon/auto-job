@@ -95,7 +95,7 @@ def print_validation_progress(provider: str, company: str, identifier: str):
     print(f"Validating {provider}: {company} ({identifier})...")
 
 
-def run_search_workflow(app_config):
+def run_search_workflow(app_config, limit: int = 20):
     result = run_job_search(app_config)
 
     print(f"\nMatched {len(result.jobs)} jobs")
@@ -104,10 +104,10 @@ def run_search_workflow(app_config):
     print_search_diagnostics(result)
     print()
 
-    print_jobs(result.jobs, 20)
+    print_jobs(result.jobs, limit)
 
     print("Generating report...")
-    report = build_text_report(result.jobs)
+    report = build_text_report(result.jobs, limit=limit)
 
     print("Saving report...")
     report_path = save_text_report(report)
@@ -171,11 +171,11 @@ def recent(limit: int = 10):
 
 
 @app.command()
-def search():
+def search(limit: int = 20):
     """Search enabled job sources, score results, and save matches."""
     app_config = load_config()
 
-    run_search_workflow(app_config)
+    run_search_workflow(app_config, limit=limit)
 
 
 @app.command("validate-sources")
@@ -191,7 +191,7 @@ def validate_sources_command(problems_only: bool = False):
 
 
 @app.command()
-def run(validate: bool = True):
+def run(validate: bool = True, limit: int = 20):
     """Validate sources, run search, save report, and email if enabled."""
     app_config = load_config()
 
@@ -202,7 +202,7 @@ def run(validate: bool = True):
         )
         print_source_validation_results(results)
 
-    run_search_workflow(app_config)
+    run_search_workflow(app_config, limit=limit)
 
 
 @app.command()

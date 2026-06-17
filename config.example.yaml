@@ -28,6 +28,12 @@ filters:
     - internship
     - phd intern
 
+  preferred_titles:
+    - backend
+    - platform
+    - product engineer
+    - full stack
+
   preferred_stack:
     - python
     - django
