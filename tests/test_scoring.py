@@ -35,6 +35,35 @@ def build_test_config() -> AppConfig:
     )
 
 
+def build_location_config() -> AppConfig:
+    return AppConfig.model_validate(
+        {
+            "search": {
+                "keywords": [
+                    "backend engineer",
+                ],
+                "locations": [
+                    "remote",
+                    "united states",
+                    "canada",
+                ],
+                "remote_only": True,
+                "recency_days": 7,
+            },
+            "filters": {
+                "excluded_keywords": [],
+                "preferred_stack": [
+                    "python",
+                ],
+                "minimum_score": 40,
+            },
+            "sources": {
+                "enabled": [],
+            },
+        }
+    )
+
+
 def test_excluded_keyword_returns_zero_score():
     app_config = build_test_config()
 
@@ -92,6 +121,61 @@ def test_onsite_job_returns_zero_when_remote_only_enabled():
     assert score == 0
     assert job.detected_stack == []
     assert "not remote" in job.match_reasons
+
+
+def test_remote_job_outside_allowed_locations_returns_zero_score():
+    app_config = build_location_config()
+
+    job = Job(
+        company="Example Co",
+        title="Backend Engineer",
+        source="test",
+        posting_url="https://example.com/job",
+        location="Portugal Remote",
+        remote_status="remote",
+        description="Python APIs PostgreSQL",
+    )
+
+    score = score_job(job, app_config)
+
+    assert score == 0
+    assert "outside allowed locations" in job.match_reasons
+
+
+def test_us_remote_job_matches_allowed_locations():
+    app_config = build_location_config()
+
+    job = Job(
+        company="Example Co",
+        title="Backend Engineer",
+        source="test",
+        posting_url="https://example.com/job",
+        location="US-Remote, Chicago, Seattle, San Francisco",
+        remote_status="remote",
+        description="Python APIs PostgreSQL",
+    )
+
+    score = score_job(job, app_config)
+
+    assert score > 0
+
+
+def test_canada_remote_job_matches_allowed_locations():
+    app_config = build_location_config()
+
+    job = Job(
+        company="Example Co",
+        title="Backend Engineer",
+        source="test",
+        posting_url="https://example.com/job",
+        location="Toronto, CAN-Remote",
+        remote_status="remote",
+        description="Python APIs PostgreSQL",
+    )
+
+    score = score_job(job, app_config)
+
+    assert score > 0
 
 
 def test_matching_remote_job_gets_positive_score():
