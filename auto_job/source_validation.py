@@ -3,7 +3,13 @@ from dataclasses import dataclass
 import feedparser
 import httpx
 
-from auto_job.config import AppConfig
+from auto_job.ats import AtsDetectionResult
+from auto_job.config import (
+    AppConfig,
+    AshbyCompanyConfig,
+    GreenhouseBoardConfig,
+    LeverCompanyConfig,
+)
 from auto_job.sources.ashby import parse_ashby_jobs
 
 
@@ -15,6 +21,51 @@ class SourceValidationResult:
     status: str
     job_count: int = 0
     message: str = ""
+
+
+def validate_discovery_result(result: AtsDetectionResult) -> SourceValidationResult:
+    if not result.company_slug:
+        return SourceValidationResult(
+            provider=result.provider,
+            company="Unknown",
+            identifier="",
+            status="error",
+            message="missing company slug",
+        )
+
+    company = result.company_slug.title()
+
+    if result.provider == "greenhouse":
+        return validate_greenhouse_board(
+            GreenhouseBoardConfig(
+                company=company,
+                board_token=result.company_slug,
+            )
+        )
+
+    if result.provider == "lever":
+        return validate_lever_company(
+            LeverCompanyConfig(
+                company=company,
+                company_slug=result.company_slug,
+            )
+        )
+
+    if result.provider == "ashby":
+        return validate_ashby_company(
+            AshbyCompanyConfig(
+                company=company,
+                company_slug=result.company_slug,
+            )
+        )
+
+    return SourceValidationResult(
+        provider=result.provider,
+        company=company,
+        identifier=result.company_slug,
+        status="error",
+        message="unsupported provider",
+    )
 
 
 def validate_rss_feed(feed_config) -> SourceValidationResult:
