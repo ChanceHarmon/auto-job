@@ -231,6 +231,7 @@ This can:
 
 - Extract posting URLs from RSS feeds
 - Detect ATS providers
+- Validate discovered sources before writing them
 - Deduplicate discoveries
 - Automatically register new providers into `config.yaml`
 
@@ -242,6 +243,7 @@ Primary commands:
 
 ```bash
 python -m auto_job.cli config
+python -m auto_job.cli guide
 python -m auto_job.cli recent
 python -m auto_job.cli search
 python -m auto_job.cli validate-sources
@@ -263,6 +265,7 @@ python -m auto_job.cli run
 Command summary:
 
 - `config`: print the loaded configuration
+- `guide`: print the recommended daily workflow
 - `recent`: show recently saved jobs from SQLite
 - `search`: fetch, score, store, report, and optionally email matches
 - `validate-sources`: check configured RSS, Greenhouse, Lever, and Ashby sources
@@ -274,6 +277,12 @@ Command summary:
 Commands that support `--write` will update `config.yaml`. Without `--write`, discovery commands are safe inspection tools.
 
 Use `search` when you want to skip validation and go directly to job matching. Use `run --no-validate` for the same full workflow without the validation step.
+
+Use `guide` when you want the app to print the recommended command sequence:
+
+```bash
+python -m auto_job.cli guide
+```
 
 ---
 
@@ -501,6 +510,12 @@ To inspect source health without running a search:
 python -m auto_job.cli validate-sources
 ```
 
+To show only broken or empty sources:
+
+```bash
+python -m auto_job.cli validate-sources --problems-only
+```
+
 Example validation output:
 
 ```text
@@ -508,7 +523,13 @@ Source validation:
 - rss:https://example.com/jobs.rss (Example Feed): ok, 25 jobs
 - greenhouse:exampleco (Example Co): ok, 14 jobs
 - lever:missingco (Missing Co): error, 0 jobs - HTTP 404
+
+Validation summary:
+- error: 1
+- ok: 2
 ```
+
+Discovery commands validate detected ATS sources before writing them to `config.yaml`. This keeps dead Greenhouse, Lever, or Ashby slugs from being added during RSS discovery.
 
 The search output includes source and filtering diagnostics:
 
@@ -562,7 +583,6 @@ Potential future directions:
 
 - Improved ATS discovery strategies
 - Additional ATS providers
-- Lever config-writing support
 - Better salary normalization
 - Source adapter tests with mocked HTTP responses
 - Simple SQLite migration/version tracking
