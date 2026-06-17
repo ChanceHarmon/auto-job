@@ -6,6 +6,14 @@ import re
 from auto_job.models import Job
 
 DESCRIPTION_PREVIEW_LENGTH = 2000
+DESCRIPTION_SECTION_HEADINGS = [
+    "requirements",
+    "qualifications",
+    "responsibilities",
+    "what you'll do",
+    "what you will do",
+    "about you",
+]
 
 
 def clean_description(description: str) -> str:
@@ -16,6 +24,27 @@ def clean_description(description: str) -> str:
     description = " ".join(description.split())
 
     return description
+
+
+def extract_description_snippet(description: str) -> str:
+    description = clean_description(description)
+
+    if len(description) <= DESCRIPTION_PREVIEW_LENGTH:
+        return description
+
+    lower_description = description.lower()
+    heading_positions = [
+        (lower_description.find(heading), heading)
+        for heading in DESCRIPTION_SECTION_HEADINGS
+        if lower_description.find(heading) != -1
+    ]
+
+    if heading_positions:
+        start_index, _heading = min(heading_positions)
+        snippet = description[start_index:start_index + DESCRIPTION_PREVIEW_LENGTH]
+        return snippet + "..."
+
+    return description[:DESCRIPTION_PREVIEW_LENGTH] + "..."
 
 
 def build_text_report(jobs: list[Job], limit: int = 20) -> str:
@@ -51,12 +80,7 @@ def build_text_report(jobs: list[Job], limit: int = 20) -> str:
             lines.append(f"Match reasons: {', '.join(job.match_reasons)}")
 
         if job.description:
-            description = clean_description(job.description)
-
-            if len(description) > DESCRIPTION_PREVIEW_LENGTH:
-                description = description[:DESCRIPTION_PREVIEW_LENGTH] + "..."
-
-            lines.append(f"Description: {description}")
+            lines.append(f"Description: {extract_description_snippet(job.description)}")
 
         lines.append(f"Apply: {job.posting_url}")
         lines.append("")

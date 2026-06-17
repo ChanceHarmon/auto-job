@@ -137,6 +137,7 @@ Jobs are scored using configurable heuristics including:
 - Keyword matches
 - Title matches
 - Preferred technology stack
+- Preferred title terms
 - Remote status
 - Allowed locations
 - Title penalties
@@ -397,6 +398,12 @@ filters:
     - internship
     - phd intern
 
+  preferred_titles:
+    - backend
+    - platform
+    - product engineer
+    - full stack
+
   preferred_stack:
     - python
     - django
@@ -417,6 +424,7 @@ Configuration controls:
 - `search.recency_days`: excludes old postings when dates are available
 - `filters.excluded_keywords`: hard excludes jobs when these words appear in the title
 - `filters.penalty_keywords`: subtracts score when these words appear in the title
+- `filters.preferred_titles`: adds score when these terms appear in the title
 - `filters.preferred_stack`: adds score for preferred technologies
 - `filters.minimum_score`: minimum score required before saving/reporting
 - `sources.enabled`: source adapters to run during `search`
@@ -515,6 +523,12 @@ python -m auto_job.cli run
 ```
 
 This validates configured RSS feeds and ATS boards first, then runs the normal search workflow.
+
+Use `--limit` to control how many matches are printed and included in the report/email:
+
+```bash
+python -m auto_job.cli run --limit 30
+```
 
 To inspect source health without running a search:
 
