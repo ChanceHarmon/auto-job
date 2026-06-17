@@ -1,7 +1,12 @@
 import httpx
 
 from auto_job.config import GreenhouseBoardConfig
-from auto_job.source_validation import validate_greenhouse_board
+from auto_job.ats import AtsDetectionResult
+from auto_job.source_validation import (
+    SourceValidationResult,
+    validate_discovery_result,
+    validate_greenhouse_board,
+)
 
 
 def test_validate_greenhouse_board_returns_ok_with_job_count(monkeypatch):
@@ -59,3 +64,43 @@ def test_validate_greenhouse_board_returns_error_for_http_error(monkeypatch):
     assert result.provider == "greenhouse"
     assert result.status == "error"
     assert result.message == "HTTP 404"
+
+
+def test_validate_discovery_result_routes_to_provider_validator(monkeypatch):
+    monkeypatch.setattr(
+        "auto_job.source_validation.validate_greenhouse_board",
+        lambda board_config: SourceValidationResult(
+            provider="greenhouse",
+            company=board_config.company,
+            identifier=board_config.board_token,
+            status="ok",
+            job_count=3,
+        ),
+    )
+
+    result = validate_discovery_result(
+        AtsDetectionResult(
+            provider="greenhouse",
+            matched_pattern="boards.greenhouse.io",
+            final_url="https://boards.greenhouse.io/example",
+            ats_url="https://boards.greenhouse.io/example",
+            company_slug="example",
+        )
+    )
+
+    assert result.status == "ok"
+    assert result.identifier == "example"
+    assert result.job_count == 3
+
+
+def test_validate_discovery_result_requires_company_slug():
+    result = validate_discovery_result(
+        AtsDetectionResult(
+            provider="greenhouse",
+            matched_pattern="boards.greenhouse.io",
+            final_url="https://example.com",
+        )
+    )
+
+    assert result.status == "error"
+    assert result.message == "missing company slug"
