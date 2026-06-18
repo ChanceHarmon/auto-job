@@ -30,6 +30,17 @@ def test_parse_ashby_jobs_extracts_job_data():
     assert jobs[0][4] == "2026-05-15"
 
 
+def test_parse_ashby_jobs_returns_empty_for_large_partial_match():
+    html = (
+        '"id":"123e4567-e89b-12d3-a456-426614174000"'
+        + (" filler " * 20000)
+    )
+
+    jobs = parse_ashby_jobs(html)
+
+    assert jobs == []
+
+
 def test_get_remote_status_maps_remote_to_remote():
     assert get_remote_status("Remote") == "remote"
 
