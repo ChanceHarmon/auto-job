@@ -93,7 +93,7 @@ def test_discover_company_sources_dry_run_does_not_write(monkeypatch, tmp_path):
     )
     monkeypatch.setattr(
         "auto_job.company_source_discovery.validate_sources",
-        lambda app_config: [],
+        lambda app_config, progress_callback=None: [],
     )
 
     result = discover_company_sources(
@@ -109,6 +109,44 @@ def test_discover_company_sources_dry_run_does_not_write(monkeypatch, tmp_path):
     assert len(result.discoveries) == 1
     assert result.added_count == 0
     assert updated_config["sources"]["greenhouse_boards"] == []
+
+
+def test_discover_company_sources_skips_stale_validation_by_default(monkeypatch, tmp_path):
+    config_path = tmp_path / "config.yaml"
+    company_file = tmp_path / "companies.yaml"
+    config_data = base_config()
+    write_yaml(config_path, config_data)
+    write_yaml(
+        company_file,
+        {"companies": [{"name": "Acme AI", "slugs": ["acme"]}]},
+    )
+
+    monkeypatch.setattr(
+        "auto_job.company_source_discovery.validate_candidate_provider",
+        lambda provider, company, slug: SourceValidationResult(
+            provider=provider,
+            company=company,
+            identifier=slug,
+            status="empty",
+        ),
+    )
+
+    def fail_if_called(app_config, progress_callback=None):
+        raise AssertionError("stale validation should only run with prune_stale")
+
+    monkeypatch.setattr(
+        "auto_job.company_source_discovery.validate_sources",
+        fail_if_called,
+    )
+
+    result = discover_company_sources(
+        build_app_config(config_data),
+        config_path=str(config_path),
+        company_file=company_file,
+        providers=["greenhouse"],
+    )
+
+    assert result.stale_sources == []
 
 
 def test_discover_company_sources_writes_verified_new_sources(monkeypatch, tmp_path):
@@ -133,7 +171,7 @@ def test_discover_company_sources_writes_verified_new_sources(monkeypatch, tmp_p
     )
     monkeypatch.setattr(
         "auto_job.company_source_discovery.validate_sources",
-        lambda app_config: [],
+        lambda app_config, progress_callback=None: [],
     )
 
     result = discover_company_sources(
@@ -170,7 +208,7 @@ def test_discover_company_sources_prunes_only_hard_404s(monkeypatch, tmp_path):
 
     monkeypatch.setattr(
         "auto_job.company_source_discovery.validate_sources",
-        lambda app_config: [
+        lambda app_config, progress_callback=None: [
             SourceValidationResult(
                 provider="greenhouse",
                 company="Broken Co",

@@ -102,6 +102,15 @@ def print_discovery_progress(provider: str, company: str, slug: str):
     print(f"Testing {provider}: {company} ({slug})...")
 
 
+def print_discovery_check_result(result):
+    message = f" - {result.message}" if result.message else ""
+    print(f"  -> {result.status}, {result.job_count} jobs{message}")
+
+
+def print_discovery_phase(message: str):
+    print(f"\n{message}")
+
+
 def run_search_workflow(app_config, limit: int = 20):
     """Shared search/report/email workflow used by search and run commands."""
     result = run_job_search(app_config)
@@ -244,6 +253,8 @@ def discovery(
         prune_stale=prune_stale,
         delay_seconds=delay,
         progress_callback=print_discovery_progress,
+        result_callback=print_discovery_check_result,
+        phase_callback=print_discovery_phase,
     )
 
     print("\nDiscovery summary:")

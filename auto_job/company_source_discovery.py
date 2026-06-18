@@ -195,6 +195,8 @@ def discover_company_sources(
     prune_stale: bool = False,
     delay_seconds: float = 0,
     progress_callback=None,
+    result_callback=None,
+    phase_callback=None,
 ) -> DiscoveryMaintenanceResult:
     candidates = load_company_candidates(company_file)
 
@@ -222,6 +224,10 @@ def discover_company_sources(
                     candidate.name,
                     slug,
                 )
+
+                if result_callback:
+                    result_callback(validation_result)
+
                 already_configured = (provider, slug) in configured_sources
 
                 if is_discoverable_result(validation_result):
@@ -255,12 +261,18 @@ def discover_company_sources(
                 if delay_seconds:
                     sleep(delay_seconds)
 
-    stale_sources = [
-        result
-        for result in validate_sources(app_config)
-        if result.provider in providers and is_prunable_source(result)
-    ]
+    stale_sources = []
     pruned_count = 0
+
+    if prune_stale:
+        if phase_callback:
+            phase_callback("Validating configured sources for stale 404s...")
+
+        stale_sources = [
+            result
+            for result in validate_sources(app_config, progress_callback=progress_callback)
+            if result.provider in providers and is_prunable_source(result)
+        ]
 
     if write and prune_stale:
         for stale_source in stale_sources:
