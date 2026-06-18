@@ -5,7 +5,7 @@ import re
 
 from auto_job.models import Job
 
-DESCRIPTION_PREVIEW_LENGTH = 2000
+DESCRIPTION_PREVIEW_LENGTH = 5000
 DESCRIPTION_SECTION_HEADINGS = [
     "requirements",
     "qualifications",
