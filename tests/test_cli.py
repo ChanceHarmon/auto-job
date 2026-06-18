@@ -4,6 +4,10 @@ from typer.testing import CliRunner
 
 from auto_job import cli
 from auto_job.ats import AtsDetectionResult
+from auto_job.company_source_discovery import (
+    CompanyDiscoveryResult,
+    DiscoveryMaintenanceResult,
+)
 from auto_job.models import Job
 from auto_job.source_validation import SourceValidationResult
 
@@ -186,7 +190,75 @@ def test_guide_command_prints_recommended_workflow():
     assert result.exit_code == 0
     assert "Recommended workflow" in result.output
     assert "validate-sources --problems-only" in result.output
-    assert "discover-from-rss --write" in result.output
+    assert "discovery --write --prune-stale" in result.output
+
+
+def test_discovery_command_runs_maintenance_workflow(monkeypatch):
+    calls = []
+
+    monkeypatch.setattr(
+        cli,
+        "load_config",
+        lambda path="config.yaml": object(),
+    )
+
+    def fake_discover_company_sources(app_config, **kwargs):
+        calls.append(kwargs)
+        return DiscoveryMaintenanceResult(
+            tested_count=10,
+            discoveries=[
+                CompanyDiscoveryResult(
+                    provider="greenhouse",
+                    company="Acme AI",
+                    slug="acme",
+                    status="ok",
+                    job_count=4,
+                    added=True,
+                )
+            ],
+            stale_sources=[
+                SourceValidationResult(
+                    provider="lever",
+                    company="Broken Co",
+                    identifier="broken",
+                    status="error",
+                    message="HTTP 404",
+                )
+            ],
+            added_count=1,
+            pruned_count=1,
+        )
+
+    monkeypatch.setattr(
+        cli,
+        "discover_company_sources",
+        fake_discover_company_sources,
+    )
+
+    result = runner.invoke(
+        cli.app,
+        [
+            "discovery",
+            "--write",
+            "--prune-stale",
+            "--limit",
+            "10",
+            "--providers",
+            "greenhouse,lever",
+            "--company-file",
+            "companies.yaml",
+            "--config-path",
+            "config.yaml",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "Discovery summary:" in result.output
+    assert "greenhouse:acme" in result.output
+    assert "lever:broken" in result.output
+    assert calls[0]["providers"] == ["greenhouse", "lever"]
+    assert calls[0]["write"] is True
+    assert calls[0]["prune_stale"] is True
 
 
 def test_discover_from_rss_skips_invalid_sources_when_writing(monkeypatch):

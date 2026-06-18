@@ -87,6 +87,8 @@ One of the core goals of the project is reducing the manual work required to dis
 - Extract provider-specific identifiers
 - Register discovered sources into configuration
 - Expand source coverage from existing RSS feeds
+- Test a maintained company universe against supported ATS providers
+- Prune configured company sources that return hard 404s
 
 Current ATS detection support:
 
@@ -97,11 +99,11 @@ Current ATS detection support:
 Example discovery flow:
 
 ```text
-RSS feed
-→ job posting URL
-→ ATS detection
-→ provider extraction
+company universe
+→ provider slug candidates
+→ Greenhouse/Lever/Ashby validation
 → config registration
+→ stale source pruning
 → direct ATS ingestion
 ```
 
@@ -221,23 +223,36 @@ Current implementation supports:
 
 ---
 
-## Automated Discovery from RSS
+## Company Source Discovery
 
-RSS feeds are not only used for job ingestion, but also for ATS discovery.
+The `discovery` command maintains configured company job sources separately from the daily `run` command. It reads `data/company_universe.yaml`, checks each company slug against Greenhouse, Lever, and Ashby, and reports verified sources.
 
-Example:
+By default, discovery is a dry run:
+
+```bash
+python -m auto_job.cli discovery
+```
+
+To write verified new sources and prune configured sources that now return hard 404s:
+
+```bash
+python -m auto_job.cli discovery --write --prune-stale
+```
+
+Useful options:
+
+- `--limit 100`: test only the first 100 companies in the universe file
+- `--providers greenhouse,ashby`: restrict the provider checks
+- `--company-file data/company_universe.yaml`: use a different company list
+- `--delay 0.2`: slow requests down during larger sweeps
+
+Discovery only auto-adds sources that validate successfully and currently return jobs. Empty boards are not written automatically because they add noise without improving the next job search. Pruning is conservative: only hard `HTTP 404` results are removed.
+
+RSS-based discovery is still available for URL-driven exploration:
 
 ```bash
 python -m auto_job.cli discover-from-rss --write
 ```
-
-This can:
-
-- Extract posting URLs from RSS feeds
-- Detect ATS providers
-- Validate discovered sources before writing them
-- Deduplicate discoveries
-- Automatically register new providers into `config.yaml`
 
 ---
 
@@ -252,6 +267,8 @@ python -m auto_job.cli recent
 python -m auto_job.cli search
 python -m auto_job.cli validate-sources
 python -m auto_job.cli run
+python -m auto_job.cli discovery
+python -m auto_job.cli discovery --write --prune-stale
 python -m auto_job.cli detect-ats <url>
 python -m auto_job.cli detect-ats <url> --write
 python -m auto_job.cli discover-ats <urls>
@@ -274,6 +291,7 @@ Command summary:
 - `search`: fetch, score, store, report, and optionally email matches
 - `validate-sources`: check configured RSS, Greenhouse, Lever, and Ashby sources
 - `run`: validate sources, then run search, storage, report generation, and optional email delivery
+- `discovery`: test the company universe, add verified sources, and optionally prune hard 404s
 - `detect-ats`: inspect one URL for a supported ATS provider
 - `discover-ats`: inspect multiple URLs for supported ATS providers
 - `discover-from-rss`: use configured RSS job URLs as ATS discovery inputs
@@ -327,6 +345,7 @@ auto-job/
 ├── auto_job/
 │   ├── ats.py
 │   ├── cli.py
+│   ├── company_source_discovery.py
 │   ├── config.py
 │   ├── config_writer.py
 │   ├── discovery.py
@@ -344,6 +363,8 @@ auto-job/
 │       ├── registry.py
 │       ├── remoteok.py
 │       └── rss.py
+├── data/
+│   └── company_universe.yaml
 ├── tests/
 ├── config.example.yaml
 ├── requirements.txt
@@ -557,7 +578,7 @@ Validation summary:
 - ok: 2
 ```
 
-Discovery commands validate detected ATS sources before writing them to `config.yaml`. This keeps dead Greenhouse, Lever, or Ashby slugs from being added during RSS discovery.
+Discovery commands validate detected ATS sources before writing them to `config.yaml`. This keeps dead Greenhouse, Lever, or Ashby slugs from being added during company-universe or RSS discovery.
 
 The search output includes source and filtering diagnostics:
 

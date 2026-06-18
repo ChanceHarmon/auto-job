@@ -7,14 +7,14 @@ import re
 from auto_job.models import Job
 from auto_job.sources.base import JobSource
 
-JOB_PATTERN = re.compile(
-    r'"id":"([a-f0-9-]{36})".*?'
-    r'"title":"([^"]+)".*?'
-    r'"locationName":"([^"]*)".*?'
-    r'"workplaceType":"([^"]*)".*?'
-    r'"publishedDate":"([^"]*)"',
-    re.DOTALL,
-)
+JOB_ID_PATTERN = re.compile(r'"id":"([a-f0-9-]{36})"')
+JOB_FIELD_PATTERNS = {
+    "title": re.compile(r'"title":"([^"]+)"'),
+    "location": re.compile(r'"locationName":"([^"]*)"'),
+    "workplace_type": re.compile(r'"workplaceType":"([^"]*)"'),
+    "published_date": re.compile(r'"publishedDate":"([^"]*)"'),
+}
+JOB_PARSE_WINDOW = 5000
 
 JSON_LD_PATTERN = re.compile(
     r'<script type="application/ld\+json">(.*?)</script>',
@@ -35,7 +35,34 @@ def clean_ashby_html(html: str) -> str:
 def parse_ashby_jobs(html: str) -> list[tuple[str, str, str, str, str]]:
     """Extract listing data from Ashby's rendered careers page HTML."""
     clean_html = clean_ashby_html(html)
-    return JOB_PATTERN.findall(clean_html)
+    jobs = []
+
+    for id_match in JOB_ID_PATTERN.finditer(clean_html):
+        # Keep parsing bounded around each id. A single cross-document regex can
+        # get very slow on large or nonstandard Ashby pages that do not contain
+        # the expected fields in order.
+        job_window = clean_html[
+            id_match.start():id_match.start() + JOB_PARSE_WINDOW
+        ]
+        field_matches = {
+            field: pattern.search(job_window)
+            for field, pattern in JOB_FIELD_PATTERNS.items()
+        }
+
+        if not all(field_matches.values()):
+            continue
+
+        jobs.append(
+            (
+                id_match.group(1),
+                field_matches["title"].group(1),
+                field_matches["location"].group(1),
+                field_matches["workplace_type"].group(1),
+                field_matches["published_date"].group(1),
+            )
+        )
+
+    return jobs
 
 
 def parse_ashby_description(html: str) -> str:

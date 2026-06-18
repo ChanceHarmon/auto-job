@@ -80,9 +80,6 @@ def extract_description_snippet(description: str) -> str:
     # Prefer useful sections before falling back to the start of the posting.
     description = clean_description(description)
 
-    if len(description) <= DESCRIPTION_PREVIEW_LENGTH:
-        return description
-
     lower_description = description.lower()
     heading_positions = [
         (lower_description.find(heading), heading)
@@ -95,7 +92,11 @@ def extract_description_snippet(description: str) -> str:
         # Requirements/Responsibilities makes the email more actionable.
         start_index, _heading = min(heading_positions)
         snippet = description[start_index:start_index + DESCRIPTION_PREVIEW_LENGTH]
-        return snippet + "..."
+        suffix = "..." if start_index + DESCRIPTION_PREVIEW_LENGTH < len(description) else ""
+        return snippet + suffix
+
+    if len(description) <= DESCRIPTION_PREVIEW_LENGTH:
+        return description
 
     return description[:DESCRIPTION_PREVIEW_LENGTH] + "..."
 

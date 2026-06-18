@@ -106,6 +106,7 @@ Main commands:
 - `run`: validates sources, searches, saves, reports, and emails.
 - `search`: searches without the validation step.
 - `validate-sources`: checks configured source health.
+- `discovery`: tests the company universe, writes verified sources, and optionally prunes hard 404s.
 - `discover-from-rss`: uses RSS jobs as seeds for ATS discovery.
 - `detect-ats`: checks one URL for Greenhouse, Lever, or Ashby.
 - `recent`: shows saved jobs.
@@ -219,6 +220,19 @@ The current discovery strategy is deliberately conservative:
 - dedupe provider/slug pairs
 - validate before writing to config
 
+## `auto_job/company_source_discovery.py`
+
+Maintains configured company job sources from a curated company universe.
+
+This is separate from the daily search flow because it can make many network calls. The command:
+
+- reads `data/company_universe.yaml`
+- tests candidate slugs against Greenhouse, Lever, and Ashby
+- adds only sources that validate and currently return jobs
+- optionally prunes configured company sources that now return hard `HTTP 404`
+
+Empty boards are not auto-added or auto-pruned. That choice keeps the command conservative: an empty board can be real but temporarily useless, while a hard 404 usually means the slug is wrong or the company moved.
+
 ---
 
 # Source Adapter Strategy
@@ -302,6 +316,7 @@ Tests are split by responsibility:
 - `test_reporting.py`: report formatting and description snippets.
 - `test_ats.py`: ATS detection and slug extraction.
 - `test_discovery.py`: deduping discovery results.
+- `test_company_source_discovery.py`: company-universe discovery, dry-run safety, writes, and pruning.
 - `test_config_writer.py`: safe config writes.
 - `test_source_validation.py`: source health checks.
 - source-specific tests: Greenhouse-like behavior is covered through search/validation, while Ashby, Lever, and RemoteOK have direct adapter tests.
@@ -358,7 +373,7 @@ Why it matters:
 
 ## Respectful Discovery
 
-Discovery is based on existing links and known ATS patterns, not broad scraping.
+Discovery is based on known company names, guessed ATS slugs, existing links, and known ATS patterns, not broad scraping.
 
 Why it matters:
 
@@ -397,6 +412,7 @@ The most meaningful future work would be:
 - Better salary parsing and normalization.
 - More intelligent description section extraction.
 - Source quality summaries from real run data.
+- Larger curated company universe with more industries and slug variants.
 
 Less urgent:
 
@@ -409,4 +425,4 @@ Less urgent:
 
 # One-Minute Explanation
 
-Auto-Job is a Python CLI that automates the boring parts of searching across multiple job sources. It reads a local YAML config, fetches jobs from RSS, RemoteOK, Greenhouse, Lever, and Ashby, normalizes every posting into one Pydantic `Job` model, scores and filters jobs against configurable preferences, saves matches in SQLite, and generates a report that can be emailed with styled HTML and plain-text fallback. It also has ATS discovery and source validation so new sources can be found and checked before being added to config. The main engineering focus is clean boundaries: source adapters handle provider-specific data, scoring handles ranking, storage handles persistence, and the CLI coordinates the workflow.
+Auto-Job is a Python CLI that automates the boring parts of searching across multiple job sources. It reads a local YAML config, fetches jobs from RSS, RemoteOK, Greenhouse, Lever, and Ashby, normalizes every posting into one Pydantic `Job` model, scores and filters jobs against configurable preferences, saves matches in SQLite, and generates a report that can be emailed with styled HTML and plain-text fallback. It also has source validation plus company-universe discovery, so new Greenhouse, Lever, and Ashby sources can be found, checked, written to config, and conservatively pruned when they go stale. The main engineering focus is clean boundaries: source adapters handle provider-specific data, scoring handles ranking, storage handles persistence, and the CLI coordinates the workflow.

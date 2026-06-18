@@ -2,6 +2,7 @@ import typer
 from rich import print
 
 from auto_job.config import load_config
+from auto_job.company_source_discovery import discover_company_sources
 from auto_job.models import Job
 from auto_job.storage import get_recent_jobs
 from auto_job.job_search import run_job_search
@@ -97,6 +98,19 @@ def print_validation_progress(provider: str, company: str, identifier: str):
     print(f"Validating {provider}: {company} ({identifier})...")
 
 
+def print_discovery_progress(provider: str, company: str, slug: str):
+    print(f"Testing {provider}: {company} ({slug})...")
+
+
+def print_discovery_check_result(result):
+    message = f" - {result.message}" if result.message else ""
+    print(f"  -> {result.status}, {result.job_count} jobs{message}")
+
+
+def print_discovery_phase(message: str):
+    print(f"\n{message}")
+
+
 def run_search_workflow(app_config, limit: int = 20):
     """Shared search/report/email workflow used by search and run commands."""
     result = run_job_search(app_config)
@@ -157,8 +171,8 @@ def guide():
     print("\nRecommended workflow:\n")
     print("1. Validate configured sources")
     print("   python -m auto_job.cli validate-sources --problems-only")
-    print("2. Discover new ATS sources from RSS jobs")
-    print("   python -m auto_job.cli discover-from-rss --write")
+    print("2. Discover, add, and prune company job sources")
+    print("   python -m auto_job.cli discovery --write --prune-stale")
     print("3. Run validation, search, storage, reporting, and email")
     print("   python -m auto_job.cli run")
     print("4. Review recently saved jobs")
@@ -209,6 +223,72 @@ def run(validate: bool = True, limit: int = 20):
         print_source_validation_results(results)
 
     run_search_workflow(app_config, limit=limit)
+
+
+@app.command()
+def discovery(
+    limit: int = 250,
+    providers: str = "greenhouse,lever,ashby",
+    company_file: str = "data/company_universe.yaml",
+    config_path: str = "config.yaml",
+    write: bool = False,
+    prune_stale: bool = False,
+    delay: float = 0,
+):
+    """Discover, write, and optionally prune configured company job sources."""
+    app_config = load_config(config_path)
+    provider_list = [
+        provider.strip()
+        for provider in providers.split(",")
+        if provider.strip()
+    ]
+
+    result = discover_company_sources(
+        app_config,
+        config_path=config_path,
+        company_file=company_file,
+        providers=provider_list,
+        limit=limit,
+        write=write,
+        prune_stale=prune_stale,
+        delay_seconds=delay,
+        progress_callback=print_discovery_progress,
+        result_callback=print_discovery_check_result,
+        phase_callback=print_discovery_phase,
+    )
+
+    print("\nDiscovery summary:")
+    print(f"- companies tested: {result.tested_count}")
+    print(f"- verified sources found: {len(result.discoveries)}")
+    print(f"- added to config: {result.added_count}")
+    print(f"- pruned from config: {result.pruned_count}")
+
+    if result.discoveries:
+        print("\nVerified sources:")
+
+        for discovery_result in result.discoveries:
+            status = "already configured" if discovery_result.already_configured else "new"
+
+            if discovery_result.added:
+                status = "added"
+
+            print(
+                f"- {discovery_result.provider}:{discovery_result.slug} "
+                f"({discovery_result.company}) - "
+                f"{discovery_result.job_count} jobs, {status}"
+            )
+
+    if result.stale_sources:
+        print("\nPrunable stale sources:")
+
+        for stale_source in result.stale_sources:
+            print(
+                f"- {stale_source.provider}:{stale_source.identifier} "
+                f"({stale_source.company}) - {stale_source.message}"
+            )
+
+    if not write:
+        print("\nDry run only. Use --write to update config.yaml.")
 
 
 @app.command()
