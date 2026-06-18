@@ -7,7 +7,7 @@ from auto_job.models import Job
 
 DESCRIPTION_PREVIEW_LENGTH = 5000
 DESCRIPTION_SECTION_HEADINGS = [
-    "requirements",
+    "required",
     "qualifications",
     "responsibilities",
     "what you'll do",
@@ -15,7 +15,7 @@ DESCRIPTION_SECTION_HEADINGS = [
     "about you",
 ]
 DESCRIPTION_HEADING_LABELS = {
-    "requirements": "Requirements",
+    "required": "Required",
     "qualifications": "Qualifications",
     "responsibilities": "Responsibilities",
     "what you'll do": "What You'll Do",
@@ -89,7 +89,7 @@ def extract_description_snippet(description: str) -> str:
 
     if heading_positions:
         # Long postings often start with company marketing copy. Starting from
-        # Requirements/Responsibilities makes the email more actionable.
+        # Required/Responsibilities makes the email more actionable.
         start_index, _heading = min(heading_positions)
         snippet = description[start_index:start_index + DESCRIPTION_PREVIEW_LENGTH]
         suffix = "..." if start_index + DESCRIPTION_PREVIEW_LENGTH < len(description) else ""

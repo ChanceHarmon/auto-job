@@ -181,7 +181,7 @@ Reporting has two output paths:
 - plain text saved to the `reports/` directory
 - styled HTML sent as the email body, with plain text as fallback
 
-Description snippets prefer useful sections such as requirements, qualifications, and responsibilities when available.
+Description snippets prefer useful sections such as required qualifications, qualifications, and responsibilities when available.
 
 Each report entry is marked as new or seen. That value comes from SQLite insert behavior: if the posting URL was inserted during this run, it is new; if SQLite ignored it because the URL already existed, it was previously discovered.
 

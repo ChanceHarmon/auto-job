@@ -104,16 +104,28 @@ def test_text_report_uses_longer_description_preview():
     assert "Apply: https://example.com/jobs/1" in report
 
 
-def test_description_snippet_prefers_requirements_section():
+def test_description_snippet_prefers_required_section():
     description = (
         f"{'intro ' * 600}"
-        "Requirements Python APIs PostgreSQL production systems"
+        "Required Python APIs PostgreSQL production systems"
     )
 
     snippet = extract_description_snippet(description)
 
-    assert snippet.startswith("Requirements Python APIs")
+    assert snippet.startswith("Required Python APIs")
     assert "intro intro intro" not in snippet
+
+
+def test_description_sections_ignore_requirements_boilerplate():
+    description = (
+        "This role may be subject to state requirements. "
+        "Responsibilities Build APIs and integrations."
+    )
+
+    report = build_html_report([build_job(1, description=description)])
+
+    assert "<h3>Required</h3>" not in report
+    assert "<h3>Responsibilities</h3>" in report
 
 
 def test_clean_description_removes_lingering_html_entities():
@@ -131,7 +143,7 @@ def test_html_report_breaks_description_into_sections():
         1,
         description=(
             "Responsibilities Build APIs and integrations "
-            "Requirements Python and SQL "
+            "Required Python and SQL "
             "Qualifications Production experience"
         ),
     )
@@ -140,5 +152,5 @@ def test_html_report_breaks_description_into_sections():
 
     assert '<section class="description-section">' in report
     assert "<h3>Responsibilities</h3>" in report
-    assert "<h3>Requirements</h3>" in report
+    assert "<h3>Required</h3>" in report
     assert "<h3>Qualifications</h3>" in report
