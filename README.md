@@ -18,7 +18,7 @@ Important:
 
 - `auto-job` does **not** automatically apply to jobs
 - Browser automation is intentionally avoided
-- Preference is given to APIs, RSS feeds, ATS boards, and lightweight respectful scraping
+- Preference is given to APIs, RSS feeds, and ATS boards
 
 ---
 
@@ -227,6 +227,8 @@ Current implementation supports:
 
 The `discovery` command maintains configured company job sources separately from the daily `run` command. It reads `data/company_universe.yaml`, checks each company slug against Greenhouse, Lever, and Ashby, and reports verified sources.
 
+The current company universe includes hundreds of companies across technology, finance, healthcare, retail, logistics, industrial, media, education, public sector tech, and other categories. This file is intentionally tracked in git because it is curated project data, not personal runtime config.
+
 By default, discovery is a dry run:
 
 ```bash
@@ -246,7 +248,9 @@ Useful options:
 - `--company-file data/company_universe.yaml`: use a different company list
 - `--delay 0.2`: slow requests down during larger sweeps
 
-Discovery only auto-adds sources that validate successfully and currently return jobs. Empty boards are not written automatically because they add noise without improving the next job search. Pruning is conservative: only hard `HTTP 404` results are removed.
+Discovery only auto-adds sources that validate successfully and currently return jobs. Empty boards are not written automatically because they add noise without improving the next job search.
+
+Pruning is conservative. `--prune-stale` validates configured sources in `config.yaml` and removes only exact provider entries that return hard `HTTP 404` responses. It does not remove companies from `data/company_universe.yaml`, and it does not remove empty boards, timeouts, parse failures, or sources that simply have zero jobs today.
 
 RSS-based discovery is still available for URL-driven exploration:
 
@@ -299,6 +303,13 @@ Command summary:
 Commands that support `--write` will update `config.yaml`. Without `--write`, discovery commands are safe inspection tools.
 
 Use `search` when you want to skip validation and go directly to job matching. Use `run --no-validate` for the same full workflow without the validation step.
+
+Use `--limit` with `search` or `run` to control how many matches are printed and included in reports:
+
+```bash
+python -m auto_job.cli search --limit 30
+python -m auto_job.cli run --limit 30
+```
 
 Use `guide` when you want the app to print the recommended command sequence:
 
@@ -377,6 +388,7 @@ Generated local files:
 - `.env`: optional email password configuration
 - `auto_job.db`: local SQLite database
 - `reports/`: generated text reports
+- `data/generated/`: optional generated discovery exports
 
 ---
 
@@ -621,6 +633,8 @@ Current test coverage includes:
 - SQLite persistence
 - Ashby parsing/normalization
 - Discovery deduplication
+- Company universe discovery, dry-run behavior, config writes, and pruning
+- Report formatting, description cleanup, and HTML email structure
 
 Tests are designed to run without a personal `config.yaml`.
 
@@ -632,6 +646,8 @@ Potential future directions:
 
 - Improved ATS discovery strategies
 - Additional ATS providers
+- Discovery batching with `--start`/`--offset`
+- Discovery failure exports for future provider research
 - Better salary normalization
 - Source adapter tests with mocked HTTP responses
 - Simple SQLite migration/version tracking
