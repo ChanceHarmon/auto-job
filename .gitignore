@@ -14,6 +14,11 @@ config.yaml
 # SQLite databases
 *.db
 
+# Generated discovery/data exports
+data/generated/
+data/*.local.yaml
+data/*.local.csv
+
 # Pytest cache
 .pytest_cache/
 
