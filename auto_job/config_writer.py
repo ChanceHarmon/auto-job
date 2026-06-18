@@ -61,6 +61,7 @@ def add_greenhouse_board(
     config_path: str,
     company: str,
     board_token: str,
+    discovered_via: str = "rss",
 ) -> bool:
     """Add a Greenhouse board if it does not already exist."""
 
@@ -86,7 +87,7 @@ def add_greenhouse_board(
         build_greenhouse_board_config(
             company,
             board_token,
-            discovered_via="rss",
+            discovered_via=discovered_via,
         )
     )
 
@@ -104,6 +105,7 @@ def add_ashby_company(
     config_path: str,
     company: str,
     company_slug: str,
+    discovered_via: str = "rss",
 ) -> bool:
     """Add an Ashby company if it does not already exist."""
 
@@ -129,7 +131,7 @@ def add_ashby_company(
         build_ashby_company_config(
             company,
             company_slug,
-            discovered_via="rss",
+            discovered_via=discovered_via,
         )
     )
 
@@ -147,6 +149,7 @@ def add_lever_company(
     config_path: str,
     company: str,
     company_slug: str,
+    discovered_via: str = "rss",
 ) -> bool:
     """Add a Lever company if it does not already exist."""
 
@@ -170,7 +173,7 @@ def add_lever_company(
         build_lever_company_config(
             company,
             company_slug,
-            discovered_via="rss",
+            discovered_via=discovered_via,
         )
     )
 
@@ -201,3 +204,47 @@ def add_provider_source(
         return add_lever_company(config_path, company_slug.title(), company_slug)
 
     return False
+
+
+def remove_provider_source(
+    config_path: str,
+    provider: str,
+    identifier: str,
+) -> bool:
+    """Remove one provider source from config.yaml by token/slug."""
+
+    with open(config_path, "r", encoding="utf-8") as file:
+        config_data = yaml.safe_load(file)
+
+    sources = config_data.setdefault("sources", {})
+
+    provider_config = {
+        "greenhouse": ("greenhouse_boards", "board_token"),
+        "ashby": ("ashby_companies", "company_slug"),
+        "lever": ("lever_companies", "company_slug"),
+    }
+
+    if provider not in provider_config:
+        return False
+
+    config_key, identifier_key = provider_config[provider]
+    entries = sources.get(config_key, [])
+    remaining_entries = [
+        entry
+        for entry in entries
+        if entry.get(identifier_key) != identifier
+    ]
+
+    if len(remaining_entries) == len(entries):
+        return False
+
+    sources[config_key] = remaining_entries
+
+    with open(config_path, "w", encoding="utf-8") as file:
+        yaml.safe_dump(
+            config_data,
+            file,
+            sort_keys=False,
+        )
+
+    return True

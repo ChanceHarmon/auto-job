@@ -1,0 +1,569 @@
+# Seed list for `python -m auto_job.cli discovery`.
+#
+# Slugs are intentionally provider-neutral guesses. The discovery command checks
+# each slug against supported ATS providers before writing anything to config.
+companies:
+  - name: Stripe
+    industries: [technology, finance]
+    slugs: [stripe]
+  - name: Datadog
+    industries: [technology]
+    slugs: [datadog]
+  - name: MongoDB
+    industries: [technology]
+    slugs: [mongodb]
+  - name: Cloudflare
+    industries: [technology]
+    slugs: [cloudflare]
+  - name: GitLab
+    industries: [technology]
+    slugs: [gitlab]
+  - name: Mozilla
+    industries: [technology]
+    slugs: [mozilla]
+  - name: Vercel
+    industries: [technology]
+    slugs: [vercel]
+  - name: Figma
+    industries: [technology]
+    slugs: [figma]
+  - name: Webflow
+    industries: [technology]
+    slugs: [webflow]
+  - name: Discord
+    industries: [technology]
+    slugs: [discord]
+  - name: Airtable
+    industries: [technology]
+    slugs: [airtable]
+  - name: Notion
+    industries: [technology]
+    slugs: [notion]
+  - name: Linear
+    industries: [technology]
+    slugs: [linear]
+  - name: Retool
+    industries: [technology]
+    slugs: [retool]
+  - name: Sentry
+    industries: [technology]
+    slugs: [sentry]
+  - name: Grafana Labs
+    industries: [technology]
+    slugs: [grafanalabs, grafana]
+  - name: LaunchDarkly
+    industries: [technology]
+    slugs: [launchdarkly]
+  - name: ClickHouse
+    industries: [technology]
+    slugs: [clickhouse]
+  - name: Elastic
+    industries: [technology]
+    slugs: [elastic]
+  - name: New Relic
+    industries: [technology]
+    slugs: [newrelic]
+  - name: PagerDuty
+    industries: [technology]
+    slugs: [pagerduty]
+  - name: Samsara
+    industries: [technology, industrial]
+    slugs: [samsara]
+  - name: Cockroach Labs
+    industries: [technology]
+    slugs: [cockroachlabs]
+  - name: Temporal
+    industries: [technology]
+    slugs: [temporal]
+  - name: Tailscale
+    industries: [technology]
+    slugs: [tailscale]
+  - name: Dagster Labs
+    industries: [technology]
+    slugs: [dagsterlabs, dagster]
+  - name: Chainguard
+    industries: [technology, security]
+    slugs: [chainguard]
+  - name: Supabase
+    industries: [technology]
+    slugs: [supabase]
+  - name: Render
+    industries: [technology]
+    slugs: [render]
+  - name: Railway
+    industries: [technology]
+    slugs: [railway]
+  - name: Airbyte
+    industries: [technology]
+    slugs: [airbyte]
+  - name: Pinecone
+    industries: [technology]
+    slugs: [pinecone]
+  - name: LangChain
+    industries: [technology]
+    slugs: [langchain]
+  - name: Semgrep
+    industries: [technology, security]
+    slugs: [semgrep]
+  - name: Honeycomb
+    industries: [technology]
+    slugs: [honeycomb]
+  - name: Hightouch
+    industries: [technology]
+    slugs: [hightouch]
+  - name: Workato
+    industries: [technology]
+    slugs: [workato]
+  - name: Twilio
+    industries: [technology]
+    slugs: [twilio]
+  - name: Apollo
+    industries: [technology]
+    slugs: [apolloio, apollo]
+  - name: Anthropic
+    industries: [technology]
+    slugs: [anthropic]
+  - name: OpenAI
+    industries: [technology]
+    slugs: [openai]
+  - name: Perplexity
+    industries: [technology]
+    slugs: [perplexity]
+  - name: Replit
+    industries: [technology, education]
+    slugs: [replit]
+  - name: Windsurf
+    industries: [technology]
+    slugs: [windsurf]
+  - name: Ramp
+    industries: [technology, finance]
+    slugs: [ramp]
+  - name: Brex
+    industries: [technology, finance]
+    slugs: [brex]
+  - name: Mercury
+    industries: [technology, finance]
+    slugs: [mercury]
+  - name: Gusto
+    industries: [technology, finance]
+    slugs: [gusto]
+  - name: Plaid
+    industries: [technology, finance]
+    slugs: [plaid]
+  - name: Robinhood
+    industries: [technology, finance]
+    slugs: [robinhood]
+  - name: Chime
+    industries: [technology, finance]
+    slugs: [chime]
+  - name: Coinbase
+    industries: [technology, finance]
+    slugs: [coinbase]
+  - name: Block
+    industries: [technology, finance]
+    slugs: [block, square]
+  - name: Affirm
+    industries: [technology, finance]
+    slugs: [affirm]
+  - name: SoFi
+    industries: [technology, finance]
+    slugs: [sofi]
+  - name: Betterment
+    industries: [finance]
+    slugs: [betterment]
+  - name: Wealthfront
+    industries: [finance]
+    slugs: [wealthfront]
+  - name: NerdWallet
+    industries: [finance, media]
+    slugs: [nerdwallet]
+  - name: Intuit
+    industries: [technology, finance]
+    slugs: [intuit]
+  - name: Toast
+    industries: [technology, retail]
+    slugs: [toast]
+  - name: Shopify
+    industries: [technology, retail]
+    slugs: [shopify]
+  - name: Instacart
+    industries: [technology, retail]
+    slugs: [instacart]
+  - name: DoorDash
+    industries: [technology, logistics]
+    slugs: [doordash]
+  - name: Uber
+    industries: [technology, logistics]
+    slugs: [uber]
+  - name: Lyft
+    industries: [technology, logistics]
+    slugs: [lyft]
+  - name: Flexport
+    industries: [technology, logistics]
+    slugs: [flexport]
+  - name: Convoy
+    industries: [technology, logistics]
+    slugs: [convoy]
+  - name: Wayfair
+    industries: [retail, technology]
+    slugs: [wayfair]
+  - name: Etsy
+    industries: [retail, technology]
+    slugs: [etsy]
+  - name: Chewy
+    industries: [retail, technology]
+    slugs: [chewy]
+  - name: Walmart
+    industries: [retail]
+    slugs: [walmart]
+  - name: Target
+    industries: [retail]
+    slugs: [target]
+  - name: Best Buy
+    industries: [retail]
+    slugs: [bestbuy]
+  - name: Home Depot
+    industries: [retail]
+    slugs: [homedepot, thehomedepot]
+  - name: Costco
+    industries: [retail]
+    slugs: [costco]
+  - name: Nike
+    industries: [retail]
+    slugs: [nike]
+  - name: Gap
+    industries: [retail]
+    slugs: [gap]
+  - name: Starbucks
+    industries: [retail]
+    slugs: [starbucks]
+  - name: McDonalds
+    industries: [retail]
+    slugs: [mcdonalds]
+  - name: Sweetgreen
+    industries: [retail]
+    slugs: [sweetgreen]
+  - name: Airbnb
+    industries: [technology, travel]
+    slugs: [airbnb]
+  - name: Expedia
+    industries: [technology, travel]
+    slugs: [expedia]
+  - name: Booking Holdings
+    industries: [technology, travel]
+    slugs: [bookingholdings, booking]
+  - name: Tripadvisor
+    industries: [technology, travel]
+    slugs: [tripadvisor]
+  - name: Zillow
+    industries: [technology, real_estate]
+    slugs: [zillow]
+  - name: Redfin
+    industries: [technology, real_estate]
+    slugs: [redfin]
+  - name: Compass
+    industries: [technology, real_estate]
+    slugs: [compass]
+  - name: Opendoor
+    industries: [technology, real_estate]
+    slugs: [opendoor]
+  - name: Oscar Health
+    industries: [healthcare, insurance]
+    slugs: [oscar, oscarhealth]
+  - name: Hinge Health
+    industries: [healthcare]
+    slugs: [hingehealth]
+  - name: Maven Clinic
+    industries: [healthcare]
+    slugs: [mavenclinic, maven]
+  - name: Included Health
+    industries: [healthcare]
+    slugs: [includedhealth]
+  - name: Headway
+    industries: [healthcare]
+    slugs: [headway]
+  - name: Zocdoc
+    industries: [healthcare, technology]
+    slugs: [zocdoc]
+  - name: Cityblock Health
+    industries: [healthcare]
+    slugs: [cityblockhealth]
+  - name: Ro
+    industries: [healthcare]
+    slugs: [ro]
+  - name: One Medical
+    industries: [healthcare]
+    slugs: [onemedical]
+  - name: GoodRx
+    industries: [healthcare]
+    slugs: [goodrx]
+  - name: Omada Health
+    industries: [healthcare]
+    slugs: [omadahealth, omada]
+  - name: Carbon Health
+    industries: [healthcare]
+    slugs: [carbonhealth]
+  - name: Noom
+    industries: [healthcare]
+    slugs: [noom]
+  - name: Devoted Health
+    industries: [healthcare, insurance]
+    slugs: [devotedhealth]
+  - name: Clover Health
+    industries: [healthcare, insurance]
+    slugs: [cloverhealth]
+  - name: UnitedHealth Group
+    industries: [healthcare, insurance]
+    slugs: [unitedhealthgroup, optum]
+  - name: CVS Health
+    industries: [healthcare, retail]
+    slugs: [cvshealth, cvs]
+  - name: Elevance Health
+    industries: [healthcare, insurance]
+    slugs: [elevancehealth]
+  - name: Aetna
+    industries: [healthcare, insurance]
+    slugs: [aetna]
+  - name: Cigna
+    industries: [healthcare, insurance]
+    slugs: [cigna]
+  - name: Humana
+    industries: [healthcare, insurance]
+    slugs: [humana]
+  - name: Allstate
+    industries: [insurance]
+    slugs: [allstate]
+  - name: Progressive
+    industries: [insurance]
+    slugs: [progressive]
+  - name: State Farm
+    industries: [insurance]
+    slugs: [statefarm]
+  - name: Liberty Mutual
+    industries: [insurance]
+    slugs: [libertymutual]
+  - name: Travelers
+    industries: [insurance]
+    slugs: [travelers]
+  - name: Root Insurance
+    industries: [insurance, technology]
+    slugs: [joinroot, root]
+  - name: Lemonade
+    industries: [insurance, technology]
+    slugs: [lemonade]
+  - name: Vouch
+    industries: [insurance, technology]
+    slugs: [vouch]
+  - name: Coalition
+    industries: [insurance, security]
+    slugs: [coalition]
+  - name: JPMorgan Chase
+    industries: [finance]
+    slugs: [jpmorganchase, chase]
+  - name: Capital One
+    industries: [finance]
+    slugs: [capitalone]
+  - name: Goldman Sachs
+    industries: [finance]
+    slugs: [goldmansachs]
+  - name: Morgan Stanley
+    industries: [finance]
+    slugs: [morganstanley]
+  - name: Fidelity
+    industries: [finance]
+    slugs: [fidelity]
+  - name: Vanguard
+    industries: [finance]
+    slugs: [vanguard]
+  - name: Mastercard
+    industries: [finance]
+    slugs: [mastercard]
+  - name: Visa
+    industries: [finance]
+    slugs: [visa]
+  - name: American Express
+    industries: [finance]
+    slugs: [americanexpress, amex]
+  - name: GE Aerospace
+    industries: [industrial, aerospace]
+    slugs: [geaerospace]
+  - name: Boeing
+    industries: [industrial, aerospace]
+    slugs: [boeing]
+  - name: Lockheed Martin
+    industries: [industrial, aerospace]
+    slugs: [lockheedmartin]
+  - name: Northrop Grumman
+    industries: [industrial, aerospace]
+    slugs: [northropgrumman]
+  - name: Raytheon
+    industries: [industrial, aerospace]
+    slugs: [raytheon]
+  - name: Anduril
+    industries: [industrial, aerospace, technology]
+    slugs: [andurilindustries, anduril]
+  - name: SpaceX
+    industries: [industrial, aerospace, technology]
+    slugs: [spacex]
+  - name: Blue Origin
+    industries: [industrial, aerospace]
+    slugs: [blueorigin]
+  - name: Rivian
+    industries: [industrial, automotive]
+    slugs: [rivian]
+  - name: Tesla
+    industries: [industrial, automotive]
+    slugs: [tesla]
+  - name: Ford
+    industries: [industrial, automotive]
+    slugs: [ford]
+  - name: General Motors
+    industries: [industrial, automotive]
+    slugs: [generalmotors, gm]
+  - name: Caterpillar
+    industries: [industrial]
+    slugs: [caterpillar]
+  - name: Deere
+    industries: [industrial]
+    slugs: [deere, johndeere]
+  - name: Honeywell
+    industries: [industrial]
+    slugs: [honeywell]
+  - name: Siemens
+    industries: [industrial]
+    slugs: [siemens]
+  - name: Schneider Electric
+    industries: [industrial]
+    slugs: [schneiderelectric]
+  - name: Procore
+    industries: [technology, industrial]
+    slugs: [procore]
+  - name: Autodesk
+    industries: [technology, industrial]
+    slugs: [autodesk]
+  - name: ServiceNow
+    industries: [technology]
+    slugs: [servicenow]
+  - name: Atlassian
+    industries: [technology]
+    slugs: [atlassian]
+  - name: Canva
+    industries: [technology]
+    slugs: [canva]
+  - name: Dropbox
+    industries: [technology]
+    slugs: [dropbox]
+  - name: Box
+    industries: [technology]
+    slugs: [box]
+  - name: Asana
+    industries: [technology]
+    slugs: [asana]
+  - name: Monday.com
+    industries: [technology]
+    slugs: [monday, mondaydotcom]
+  - name: Miro
+    industries: [technology]
+    slugs: [miro]
+  - name: Zapier
+    industries: [technology]
+    slugs: [zapier]
+  - name: HubSpot
+    industries: [technology]
+    slugs: [hubspot]
+  - name: Mailchimp
+    industries: [technology]
+    slugs: [mailchimp]
+  - name: Klaviyo
+    industries: [technology]
+    slugs: [klaviyo]
+  - name: Braze
+    industries: [technology]
+    slugs: [braze]
+  - name: Okta
+    industries: [technology, security]
+    slugs: [okta]
+  - name: 1Password
+    industries: [technology, security]
+    slugs: [1password]
+  - name: Vanta
+    industries: [technology, security]
+    slugs: [vanta]
+  - name: HashiCorp
+    industries: [technology]
+    slugs: [hashicorp]
+  - name: Confluent
+    industries: [technology]
+    slugs: [confluent]
+  - name: Snowflake
+    industries: [technology]
+    slugs: [snowflake]
+  - name: Databricks
+    industries: [technology]
+    slugs: [databricks]
+  - name: Palantir
+    industries: [technology]
+    slugs: [palantir]
+  - name: Reddit
+    industries: [technology, media]
+    slugs: [reddit]
+  - name: Pinterest
+    industries: [technology, media]
+    slugs: [pinterest]
+  - name: Snap
+    industries: [technology, media]
+    slugs: [snap]
+  - name: Spotify
+    industries: [technology, media]
+    slugs: [spotify]
+  - name: Netflix
+    industries: [technology, media]
+    slugs: [netflix]
+  - name: Roku
+    industries: [technology, media]
+    slugs: [roku]
+  - name: The New York Times
+    industries: [media]
+    slugs: [nytimes, thenewyorktimes]
+  - name: Duolingo
+    industries: [education, edtech]
+    slugs: [duolingo]
+  - name: Coursera
+    industries: [education, edtech]
+    slugs: [coursera]
+  - name: Udemy
+    industries: [education, edtech]
+    slugs: [udemy]
+  - name: Khan Academy
+    industries: [education, edtech]
+    slugs: [khanacademy]
+  - name: Quizlet
+    industries: [education, edtech]
+    slugs: [quizlet]
+  - name: Guild
+    industries: [education, edtech]
+    slugs: [guild, guildeducation]
+  - name: Handshake
+    industries: [education, edtech]
+    slugs: [handshake]
+  - name: Chegg
+    industries: [education, edtech]
+    slugs: [chegg]
+  - name: Outschool
+    industries: [education, edtech]
+    slugs: [outschool]
+  - name: Instructure
+    industries: [education, edtech]
+    slugs: [instructure]
+  - name: Udacity
+    industries: [education, edtech]
+    slugs: [udacity]
+  - name: Skillshare
+    industries: [education, edtech]
+    slugs: [skillshare]
+  - name: Newsela
+    industries: [education, edtech]
+    slugs: [newsela]
+  - name: Nearpod
+    industries: [education, edtech]
+    slugs: [nearpod]

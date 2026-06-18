@@ -7,6 +7,7 @@ from auto_job.config_writer import (
     add_greenhouse_board,
     add_lever_company,
     add_provider_source,
+    remove_provider_source,
 )
 
 
@@ -177,3 +178,54 @@ def test_add_provider_source_supports_lever(tmp_path):
 
     assert len(companies) == 1
     assert companies[0]["company_slug"] == "exampleco"
+
+
+def test_remove_provider_source_removes_matching_identifier(tmp_path):
+    config_path = tmp_path / "config.yaml"
+
+    config_data = {
+        "sources": {
+            "greenhouse_boards": [
+                {"company": "Broken Co", "board_token": "broken"},
+                {"company": "Healthy Co", "board_token": "healthy"},
+            ]
+        }
+    }
+
+    with open(config_path, "w", encoding="utf-8") as file:
+        yaml.safe_dump(config_data, file)
+
+    removed = remove_provider_source(config_path, "greenhouse", "broken")
+
+    assert removed is True
+
+    with open(config_path, "r", encoding="utf-8") as file:
+        updated_config = yaml.safe_load(file)
+
+    assert updated_config["sources"]["greenhouse_boards"] == [
+        {"company": "Healthy Co", "board_token": "healthy"}
+    ]
+
+
+def test_remove_provider_source_returns_false_for_missing_identifier(tmp_path):
+    config_path = tmp_path / "config.yaml"
+
+    config_data = {
+        "sources": {
+            "lever_companies": [
+                {"company": "Healthy Co", "company_slug": "healthy"}
+            ]
+        }
+    }
+
+    with open(config_path, "w", encoding="utf-8") as file:
+        yaml.safe_dump(config_data, file)
+
+    removed = remove_provider_source(config_path, "lever", "missing")
+
+    assert removed is False
+
+    with open(config_path, "r", encoding="utf-8") as file:
+        updated_config = yaml.safe_load(file)
+
+    assert updated_config == config_data
