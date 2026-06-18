@@ -14,16 +14,66 @@ DESCRIPTION_SECTION_HEADINGS = [
     "what you will do",
     "about you",
 ]
+DESCRIPTION_HEADING_LABELS = {
+    "requirements": "Requirements",
+    "qualifications": "Qualifications",
+    "responsibilities": "Responsibilities",
+    "what you'll do": "What You'll Do",
+    "what you will do": "What You Will Do",
+    "about you": "About You",
+}
+MATCH_REASON_LABELS = {
+    "keyword match": "Keywords",
+    "title match": "Title",
+    "preferred stack": "Stack",
+    "preferred title": "Preferred titles",
+    "title penalty": "Penalties",
+}
 
 
 def clean_description(description: str) -> str:
     # Provider descriptions often arrive as HTML or escaped HTML. Reports need
     # readable text, so normalize tags/entities before snippet extraction.
-    description = unescape(description)
+    for _ in range(2):
+        description = unescape(description)
+
     description = re.sub(r"<[^>]+>", " ", description)
+    description = description.replace("\xa0", " ")
+    description = description.replace("&", " and ")
+    description = re.sub(r"\b(?:nbsp|amp)\b", " ", description, flags=re.IGNORECASE)
     description = " ".join(description.split())
 
     return description
+
+
+def find_description_sections(description: str) -> list[tuple[str, str]]:
+    lower_description = description.lower()
+    matches = []
+
+    for heading in DESCRIPTION_SECTION_HEADINGS:
+        pattern = rf"(?<![a-z0-9]){re.escape(heading)}(?![a-z0-9])"
+        match = re.search(pattern, lower_description)
+
+        if match:
+            matches.append(
+                (
+                    match.start(),
+                    match.end(),
+                    DESCRIPTION_HEADING_LABELS[heading],
+                )
+            )
+
+    matches.sort(key=lambda item: item[0])
+    sections = []
+
+    for index, (start, end, heading) in enumerate(matches):
+        next_start = matches[index + 1][0] if index + 1 < len(matches) else len(description)
+        body = description[end:next_start].strip(" :-")
+
+        if body:
+            sections.append((heading, body))
+
+    return sections
 
 
 def extract_description_snippet(description: str) -> str:
@@ -48,6 +98,61 @@ def extract_description_snippet(description: str) -> str:
         return snippet + "..."
 
     return description[:DESCRIPTION_PREVIEW_LENGTH] + "..."
+
+
+def build_description_sections(description: str) -> list[tuple[str, str]]:
+    description = clean_description(description)
+    sections = find_description_sections(description)
+
+    if not sections:
+        return [("Description", extract_description_snippet(description))]
+
+    selected_sections = []
+    remaining_length = DESCRIPTION_PREVIEW_LENGTH
+
+    for heading, body in sections:
+        if remaining_length <= 0:
+            break
+
+        body = body[:remaining_length]
+        remaining_length -= len(body)
+        selected_sections.append((heading, body))
+
+    return selected_sections
+
+
+def summarize_match_reasons(match_reasons: list[str]) -> dict[str, list[str]]:
+    summary: dict[str, list[str]] = {}
+
+    for reason in match_reasons:
+        if reason == "remote":
+            summary.setdefault("Other", []).append("remote")
+            continue
+
+        label = None
+        value = reason
+
+        for prefix, candidate_label in MATCH_REASON_LABELS.items():
+            prefix_text = f"{prefix}: "
+
+            if reason.startswith(prefix_text):
+                label = candidate_label
+                value = reason.removeprefix(prefix_text)
+                break
+
+        summary.setdefault(label or "Other", []).append(value)
+
+    return summary
+
+
+def format_match_summary_text(match_reasons: list[str]) -> list[str]:
+    summary = summarize_match_reasons(match_reasons)
+    lines = []
+
+    for label, values in summary.items():
+        lines.append(f"{label}: {', '.join(values)}")
+
+    return lines
 
 
 def build_text_report(jobs: list[Job], limit: int = 20) -> str:
@@ -85,10 +190,19 @@ def build_text_report(jobs: list[Job], limit: int = 20) -> str:
             lines.append(f"Detected stack: {', '.join(job.detected_stack)}")
 
         if job.match_reasons:
-            lines.append(f"Match reasons: {', '.join(job.match_reasons)}")
+            lines.append("Match reasons:")
+
+            for summary_line in format_match_summary_text(job.match_reasons):
+                lines.append(f"- {summary_line}")
 
         if job.description:
-            lines.append(f"Description: {extract_description_snippet(job.description)}")
+            lines.append("Description:")
+
+            for heading, body in build_description_sections(job.description):
+                if heading == "Description":
+                    lines.append(body)
+                else:
+                    lines.append(f"{heading}: {body}")
 
         lines.append(f"Apply: {job.posting_url}")
         lines.append("")
@@ -107,9 +221,9 @@ def build_html_report(jobs: list[Job], limit: int = 20) -> str:
         badge_text = "New" if job.is_new else "Seen"
         badge_color = "#166534" if job.is_new else "#475569"
         description = (
-            extract_description_snippet(job.description)
+            build_description_sections(job.description)
             if job.description
-            else ""
+            else []
         )
 
         stack_html = ""
@@ -121,17 +235,37 @@ def build_html_report(jobs: list[Job], limit: int = 20) -> str:
 
         reasons_html = ""
         if job.match_reasons:
+            reason_items = []
+
+            for label, values in summarize_match_reasons(job.match_reasons).items():
+                reason_items.append(
+                    "<li>"
+                    f"<strong>{escape(label)}:</strong> "
+                    f"{escape(', '.join(values))}"
+                    "</li>"
+                )
+
             reasons_html = (
-                "<p class=\"meta\"><strong>Why matched:</strong> "
-                f"{escape(', '.join(job.match_reasons))}</p>"
+                "<div class=\"reason-block\"><strong>Why matched</strong>"
+                f"<ul>{''.join(reason_items)}</ul></div>"
             )
 
         description_html = ""
         if description:
+            section_html = []
+
+            for heading, body in description:
+                section_html.append(
+                    "<section class=\"description-section\">"
+                    f"<h3>{escape(heading)}</h3>"
+                    f"<p>{escape(body)}</p>"
+                    "</section>"
+                )
+
             description_html = (
-                "<p class=\"description\">"
-                f"{escape(description)}"
-                "</p>"
+                "<div class=\"description\">"
+                f"{''.join(section_html)}"
+                "</div>"
             )
 
         cards.append(
@@ -235,6 +369,30 @@ def build_html_report(jobs: list[Job], limit: int = 20) -> str:
           .description {{
             color: #1e293b;
             margin: 12px 0;
+          }}
+          .reason-block {{
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            margin: 12px 0;
+            padding: 10px 12px;
+          }}
+          .reason-block ul {{
+            margin: 6px 0 0;
+            padding-left: 20px;
+          }}
+          .description-section {{
+            border-top: 1px solid #e2e8f0;
+            margin-top: 12px;
+            padding-top: 10px;
+          }}
+          .description-section h3 {{
+            color: #0f172a;
+            font-size: 17px;
+            margin: 0 0 4px;
+          }}
+          .description-section p {{
+            margin: 0;
           }}
           .apply {{
             color: #0f766e;
