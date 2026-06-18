@@ -1,4 +1,4 @@
-"""Tests for ATS URL detection and provider-specific slug extraction."""
+# Tests for ATS URL detection and provider-specific slug extraction.
 
 from auto_job.ats import extract_first_matching_url
 from auto_job.ats import extract_greenhouse_board_token

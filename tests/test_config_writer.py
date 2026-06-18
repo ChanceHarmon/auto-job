@@ -1,4 +1,4 @@
-"""Tests for safe config.yaml writes used by ATS discovery commands."""
+# Tests for safe config.yaml writes used by ATS discovery commands.
 
 import yaml
 

@@ -1,8 +1,9 @@
-"""Tests for report formatting and useful job description snippets."""
+# Tests for report formatting and useful job description snippets.
 
 from auto_job.models import Job
 from auto_job.reporting import (
     DESCRIPTION_PREVIEW_LENGTH,
+    build_html_report,
     build_text_report,
     extract_description_snippet,
 )
@@ -28,8 +29,33 @@ def test_text_report_defaults_to_twenty_jobs():
     report = build_text_report(jobs)
 
     assert "Showing: 20 of 25 matches" in report
-    assert "20. 81 | Backend Engineer @ Example 19" in report
-    assert "21. 80 | Backend Engineer @ Example 20" not in report
+    assert "20. [SEEN] 81 | Backend Engineer @ Example 19" in report
+    assert "21. [SEEN] 80 | Backend Engineer @ Example 20" not in report
+
+
+def test_text_report_marks_new_and_seen_jobs():
+    new_job = build_job(1)
+    new_job.is_new = True
+    seen_job = build_job(2)
+
+    report = build_text_report([new_job, seen_job])
+
+    assert "1. [NEW] 99 | Backend Engineer @ Example 1" in report
+    assert "2. [SEEN] 98 | Backend Engineer @ Example 2" in report
+
+
+def test_html_report_includes_styled_status_badges():
+    new_job = build_job(1)
+    new_job.is_new = True
+    seen_job = build_job(2)
+
+    report = build_html_report([new_job, seen_job])
+
+    assert "<!doctype html>" in report
+    assert ">New</span>" in report
+    assert ">Seen</span>" in report
+    assert "font-size: 17px" in report
+    assert "Open posting" in report
 
 
 def test_text_report_uses_longer_description_preview():

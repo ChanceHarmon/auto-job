@@ -1,4 +1,4 @@
-"""Tests for source health checks and validated ATS discovery results."""
+# Tests for source health checks and validated ATS discovery results.
 
 import httpx
 

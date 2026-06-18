@@ -1,4 +1,4 @@
-"""Tests for Lever date parsing, description building, and API error handling."""
+# Tests for Lever date parsing, description building, and API error handling.
 
 from datetime import date
 
