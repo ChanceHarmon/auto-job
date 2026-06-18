@@ -25,3 +25,4 @@ class Job(BaseModel):
     detected_stack: list[str] = Field(default_factory=list)
     match_reasons: list[str] = Field(default_factory=list)
     match_score: int = 0
+    is_new: bool = False

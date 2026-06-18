@@ -56,7 +56,9 @@ def init_db():
 
 
 def save_job(job: Job) -> bool:
-    """Persist one job, returning True only when it was newly inserted."""
+    # SQLite is the source of truth for "new vs already seen". If the unique
+    # posting_url insert succeeds, this run found the job for the first time.
+    # If INSERT OR IGNORE does nothing, the job was already in a previous run.
     with get_connection() as connection:
         cursor = connection.execute(
             """
@@ -92,11 +94,15 @@ def save_job(job: Job) -> bool:
             ),
         )
 
-        return cursor.rowcount > 0
+        was_inserted = cursor.rowcount > 0
+        job.is_new = was_inserted
+
+        return was_inserted
 
 
 def save_jobs(jobs: list[Job]) -> int:
-    """Persist a batch of matched jobs and count newly inserted records."""
+    # Mutates each Job with is_new so reporting/email can show whether a match
+    # is fresh without adding a separate tracking workflow.
     saved_count = 0
 
     for job in jobs:

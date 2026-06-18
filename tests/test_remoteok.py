@@ -1,4 +1,4 @@
-"""Tests for RemoteOK normalization and API response handling."""
+# Tests for RemoteOK normalization and API response handling.
 
 from datetime import date
 

@@ -14,9 +14,8 @@ def send_report_email(
     report: str,
     config: AppConfig,
     subject: str = "Auto-job report",
+    html_report: str | None = None,
 ) -> bool:
-    """Send a plain-text job report email."""
-
     # Return False for configuration issues instead of raising so a daily run
     # can still save the report locally even when email is disabled or mis-set.
     if not config.email.enabled:
@@ -38,6 +37,9 @@ def send_report_email(
     message["From"] = config.email.from_email
     message["To"] = config.email.to
     message.set_content(report)
+
+    if html_report:
+        message.add_alternative(html_report, subtype="html")
 
     # SMTP is intentionally plain and local-config driven; the app does not
     # store credentials, only reads the app password from the environment.

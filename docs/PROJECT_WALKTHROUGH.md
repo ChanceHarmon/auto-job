@@ -29,7 +29,7 @@ That command does four main things:
 1. Validates configured sources.
 2. Fetches jobs from enabled source adapters.
 3. Scores, filters, deduplicates, and saves matches.
-4. Generates a text report and optionally sends it by email.
+4. Generates a text report and optionally sends a styled HTML email.
 
 The flow looks like this:
 
@@ -42,7 +42,7 @@ config.yaml
   -> dedupe by company/title
   -> save new matches to SQLite
   -> generate report
-  -> optionally email report
+  -> optionally email styled report
 ```
 
 ---
@@ -175,16 +175,18 @@ The storage layer also preserves scoring explanations:
 
 Builds the plain-text report.
 
-The report is used two ways:
+Reporting has two output paths:
 
-- saved to the `reports/` directory
-- sent as the email body
+- plain text saved to the `reports/` directory
+- styled HTML sent as the email body, with plain text as fallback
 
 Description snippets prefer useful sections such as requirements, qualifications, and responsibilities when available.
 
+Each report entry is marked as new or seen. That value comes from SQLite insert behavior: if the posting URL was inserted during this run, it is new; if SQLite ignored it because the URL already existed, it was previously discovered.
+
 ## `auto_job/emailer.py`
 
-Sends the text report through SMTP.
+Sends the report through SMTP.
 
 Credentials are not stored in config. The Gmail app password is read from the `AUTO_JOB_EMAIL_PASSWORD` environment variable.
 
@@ -380,9 +382,9 @@ Auto-applying would add risk, privacy concerns, and low-quality applications. Th
 
 The current user workflow uses an external tracker. Adding application management would duplicate that workflow and make the app less focused.
 
-## Why Plain Text Reports?
+## Why Plain Text Plus HTML Email?
 
-Plain text works well for terminal output, saved reports, and email. It keeps rendering simple and reliable.
+Plain text works well for saved local reports because it is easy to search and diff. HTML is better for email because it can use larger text, spacing, links, and new/seen badges while still keeping a plain-text fallback.
 
 ---
 
@@ -407,4 +409,4 @@ Less urgent:
 
 # One-Minute Explanation
 
-Auto-Job is a Python CLI that automates the boring parts of searching across multiple job sources. It reads a local YAML config, fetches jobs from RSS, RemoteOK, Greenhouse, Lever, and Ashby, normalizes every posting into one Pydantic `Job` model, scores and filters jobs against configurable preferences, saves matches in SQLite, and generates a report that can be emailed. It also has ATS discovery and source validation so new sources can be found and checked before being added to config. The main engineering focus is clean boundaries: source adapters handle provider-specific data, scoring handles ranking, storage handles persistence, and the CLI coordinates the workflow.
+Auto-Job is a Python CLI that automates the boring parts of searching across multiple job sources. It reads a local YAML config, fetches jobs from RSS, RemoteOK, Greenhouse, Lever, and Ashby, normalizes every posting into one Pydantic `Job` model, scores and filters jobs against configurable preferences, saves matches in SQLite, and generates a report that can be emailed with styled HTML and plain-text fallback. It also has ATS discovery and source validation so new sources can be found and checked before being added to config. The main engineering focus is clean boundaries: source adapters handle provider-specific data, scoring handles ranking, storage handles persistence, and the CLI coordinates the workflow.

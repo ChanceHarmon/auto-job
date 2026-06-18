@@ -5,7 +5,7 @@ from auto_job.config import load_config
 from auto_job.models import Job
 from auto_job.storage import get_recent_jobs
 from auto_job.job_search import run_job_search
-from auto_job.reporting import build_text_report, save_text_report
+from auto_job.reporting import build_html_report, build_text_report, save_text_report
 from auto_job.ats import detect_ats_provider
 from auto_job.config_writer import add_provider_source
 from auto_job.discovery import discover_ats_from_job_urls, get_discovery_urls_from_jobs
@@ -111,6 +111,7 @@ def run_search_workflow(app_config, limit: int = 20):
 
     print("Generating report...")
     report = build_text_report(result.jobs, limit=limit)
+    html_report = build_html_report(result.jobs, limit=limit)
 
     print("Saving report...")
     report_path = save_text_report(report)
@@ -123,6 +124,7 @@ def run_search_workflow(app_config, limit: int = 20):
         report,
         app_config,
         subject=f"Auto-job report: {len(result.jobs)} matches",
+        html_report=html_report,
     )
 
     if email_sent:

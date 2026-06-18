@@ -1,4 +1,4 @@
-"""Tests for SQLite persistence and saved match metadata."""
+# Tests for SQLite persistence and saved match metadata.
 
 from datetime import date
 
@@ -30,6 +30,7 @@ def test_save_and_get_recent_jobs_preserves_match_details(tmp_path, monkeypatch)
     recent_jobs = storage.get_recent_jobs()
 
     assert was_saved is True
+    assert job.is_new is True
     assert len(recent_jobs) == 1
     assert recent_jobs[0].detected_stack == ["python", "postgresql"]
     assert recent_jobs[0].match_reasons == [
@@ -37,3 +38,27 @@ def test_save_and_get_recent_jobs_preserves_match_details(tmp_path, monkeypatch)
         "remote",
     ]
     assert recent_jobs[0].match_score == 55
+
+
+def test_save_job_marks_existing_posting_as_not_new(tmp_path, monkeypatch):
+    monkeypatch.setattr(storage, "DB_PATH", tmp_path / "auto_job.db")
+
+    storage.init_db()
+
+    first_job = Job(
+        company="Example Co",
+        title="Backend Engineer",
+        source="test",
+        posting_url="https://example.com/jobs/1",
+    )
+    duplicate_job = Job(
+        company="Example Co",
+        title="Backend Engineer",
+        source="test",
+        posting_url="https://example.com/jobs/1",
+    )
+
+    assert storage.save_job(first_job) is True
+    assert storage.save_job(duplicate_job) is False
+    assert first_job.is_new is True
+    assert duplicate_job.is_new is False

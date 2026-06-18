@@ -192,6 +192,7 @@ UNIQUE(posting_url)
 
 `auto-job` generates readable text reports containing:
 
+- New/seen indicators for each posting
 - Match scores
 - Source information
 - Stack detection
@@ -215,7 +216,8 @@ Current implementation supports:
 
 - Gmail SMTP
 - `.env`-based credential loading
-- Plain text email delivery
+- Styled HTML email delivery with plain-text fallback
+- New/seen badges based on whether SQLite saved the job for the first time
 
 ---
 
@@ -615,7 +617,6 @@ Potential future directions:
 - Structured logging
 - Scheduled job runs
 - Report formatting improvements
-- HTML email support
 - Web dashboard/API layer
 - Smarter deduplication strategies
 
