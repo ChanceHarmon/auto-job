@@ -8,6 +8,7 @@ from auto_job.reporting import (
     clean_description,
     extract_description_snippet,
     format_match_summary_text,
+    sanitize_description_html,
 )
 
 
@@ -136,6 +137,43 @@ def test_clean_description_removes_lingering_html_entities():
     assert cleaned == "Build APIs and services with Python and SQL"
     assert "amp" not in cleaned
     assert "nbsp" not in cleaned
+
+
+def test_sanitize_description_html_keeps_safe_structure():
+    description_html = (
+        '<div class="content">'
+        "<h3>What you'll do</h3>"
+        "<p>Build <strong>Python</strong> APIs.</p>"
+        "<script>alert('x')</script>"
+        "<ul><li onclick=\"bad()\">Own PostgreSQL services</li></ul>"
+        "</div>"
+    )
+
+    cleaned = sanitize_description_html(description_html)
+
+    assert "<h3>What you&#x27;ll do</h3>" in cleaned
+    assert "<strong>Python</strong>" in cleaned
+    assert "<ul><li>Own PostgreSQL services</li></ul>" in cleaned
+    assert "script" not in cleaned
+    assert "onclick" not in cleaned
+
+
+def test_html_report_prefers_sanitized_provider_description_html():
+    job = build_job(
+        1,
+        description="Fallback text that should not render in HTML email.",
+    )
+    job.description_html = (
+        "<p>Provider intro</p>"
+        "<ul><li>Build APIs</li><li>Own data pipelines</li></ul>"
+    )
+
+    report = build_html_report([job])
+
+    assert "provider-description" in report
+    assert "<p>Provider intro</p>" in report
+    assert "<li>Build APIs</li>" in report
+    assert "Fallback text that should not render" not in report
 
 
 def test_html_report_breaks_description_into_sections():

@@ -249,7 +249,7 @@ RemoteOK has a public API. The source skips the metadata row and normalizes sala
 
 ## Greenhouse
 
-Greenhouse has a structured board API. The adapter loops through configured board tokens and fetches full job content.
+Greenhouse has a structured board API. The adapter loops through configured board tokens and fetches full job content. It stores both cleaned plain text for matching and the original provider HTML so email reports can preserve the posting's headings, paragraphs, and lists after sanitization.
 
 ## Lever
 

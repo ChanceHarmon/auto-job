@@ -1,6 +1,7 @@
 import httpx
 from datetime import datetime
 
+from auto_job.description_utils import clean_description
 from auto_job.models import Job
 from auto_job.sources.base import JobSource
 
@@ -73,6 +74,8 @@ class GreenhouseSource(JobSource):
                     if updated_at:
                         date_posted = datetime.fromisoformat(updated_at).date()
 
+                    description_html = raw_job.get("content") or ""
+
                     job = Job(
                         company=board.company,
                         title=raw_job.get("title", "Unknown"),
@@ -82,7 +85,8 @@ class GreenhouseSource(JobSource):
                         remote_status=remote_status,
                         salary=None,
                         date_posted=date_posted,
-                        description=raw_job.get("content", ""),
+                        description=clean_description(description_html),
+                        description_html=description_html,
                     )
 
                     jobs.append(job)
