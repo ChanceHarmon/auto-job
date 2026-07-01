@@ -2,6 +2,7 @@ from datetime import date, datetime
 
 import httpx
 
+from auto_job.description_utils import clean_description
 from auto_job.models import Job
 from auto_job.sources.base import JobSource
 
@@ -42,8 +43,22 @@ def build_remoteok_description(raw_job: dict) -> str:
     return f"{description}\n\nTags: {', '.join(tags)}"
 
 
+def build_remoteok_description_html(raw_job: dict) -> str:
+    description = raw_job.get("description") or ""
+    tags = raw_job.get("tags") or []
+
+    if not tags:
+        return description
+
+    tag_text = ", ".join(tags)
+
+    return f"{description}<p><strong>Tags:</strong> {tag_text}</p>"
+
+
 def normalize_remoteok_job(raw_job: dict) -> Job:
     """Convert one RemoteOK API row into the shared Job model."""
+    description = build_remoteok_description(raw_job)
+
     return Job(
         company=raw_job.get("company") or "Unknown",
         title=raw_job.get("position") or "Unknown",
@@ -53,7 +68,8 @@ def normalize_remoteok_job(raw_job: dict) -> Job:
         remote_status="remote",
         salary=format_remoteok_salary(raw_job),
         date_posted=parse_remoteok_date(raw_job.get("date")),
-        description=build_remoteok_description(raw_job),
+        description=clean_description(description),
+        description_html=build_remoteok_description_html(raw_job),
     )
 
 

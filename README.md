@@ -223,7 +223,7 @@ Current implementation supports:
 - `.env`-based credential loading
 - Styled HTML email delivery with plain-text fallback
 - New/seen badges based on whether SQLite saved the job for the first time
-- Sanitized provider HTML descriptions when available, starting with Greenhouse postings
+- Sanitized provider HTML descriptions when available from source adapters
 
 ---
 

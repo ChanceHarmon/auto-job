@@ -1,7 +1,9 @@
 from datetime import date, datetime, timezone
+from html import escape
 
 import httpx
 
+from auto_job.description_utils import clean_description
 from auto_job.models import Job
 from auto_job.sources.base import JobSource
 
@@ -54,7 +56,37 @@ def build_lever_description(posting: dict) -> str:
     if closing:
         description_parts.append(closing)
 
-    return "\n\n".join(description_parts)
+    return clean_description("\n\n".join(description_parts))
+
+
+def build_lever_description_html(posting: dict) -> str:
+    content = posting.get("content") or {}
+    description_parts = []
+
+    description = content.get("description")
+
+    if description:
+        description_parts.append(description)
+
+    for section in content.get("lists", []):
+        section_title = section.get("text")
+        section_content = section.get("content")
+
+        if section_title:
+            description_parts.append(f"<h3>{escape(section_title)}</h3>")
+
+        if section_content:
+            description_parts.append(section_content)
+
+    closing = content.get("closing")
+
+    if closing:
+        description_parts.append(closing)
+
+    if description_parts:
+        return "\n\n".join(description_parts)
+
+    return posting.get("description") or ""
 
 
 def normalize_lever_posting(company: str, posting: dict) -> Job:
@@ -71,6 +103,7 @@ def normalize_lever_posting(company: str, posting: dict) -> Job:
         remote_status=detect_lever_remote_status(location),
         date_posted=parse_lever_date(posting.get("createdAt")),
         description=build_lever_description(posting),
+        description_html=build_lever_description_html(posting),
     )
 
 

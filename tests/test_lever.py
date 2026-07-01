@@ -6,6 +6,7 @@ from auto_job.config import AppConfig
 from auto_job.sources.lever import (
     LeverSource,
     build_lever_description,
+    build_lever_description_html,
     detect_lever_remote_status,
     normalize_lever_posting,
     parse_lever_date,
@@ -46,6 +47,28 @@ def test_build_lever_description_includes_content_sections():
     assert "Equal opportunity employer." in description
 
 
+def test_build_lever_description_html_preserves_structured_content():
+    description_html = build_lever_description_html(
+        {
+            "content": {
+                "description": "<p>Build backend systems.</p>",
+                "lists": [
+                    {
+                        "text": "What you will do",
+                        "content": "<ul><li>Work with Python and PostgreSQL.</li></ul>",
+                    }
+                ],
+                "closing": "<p>Equal opportunity employer.</p>",
+            }
+        }
+    )
+
+    assert "<p>Build backend systems.</p>" in description_html
+    assert "<h3>What you will do</h3>" in description_html
+    assert "<li>Work with Python and PostgreSQL.</li>" in description_html
+    assert "<p>Equal opportunity employer.</p>" in description_html
+
+
 def test_normalize_lever_posting_returns_job():
     job = normalize_lever_posting(
         "Example Co",
@@ -69,6 +92,7 @@ def test_normalize_lever_posting_returns_job():
     assert job.remote_status == "remote"
     assert job.date_posted == date(2026, 6, 15)
     assert job.description == "Build APIs."
+    assert job.description_html == "Build APIs."
 
 
 def test_lever_source_skips_404_companies(monkeypatch):
