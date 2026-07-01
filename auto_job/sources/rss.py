@@ -1,6 +1,7 @@
 import feedparser
 from datetime import date
 
+from auto_job.description_utils import clean_description
 from auto_job.models import Job
 from auto_job.sources.base import JobSource
 
@@ -45,6 +46,8 @@ class RSSSource(JobSource):
                         company = feed_config.name
                         title = raw_title
 
+                    description_html = entry.get("summary", "")
+
                     job = Job(
                         company=company,
                         title=title,
@@ -53,7 +56,8 @@ class RSSSource(JobSource):
                         location="Remote",
                         remote_status="remote",
                         date_posted=parse_rss_entry_date(entry),
-                        description=entry.get("summary", ""),
+                        description=clean_description(description_html),
+                        description_html=description_html,
                     )
 
                     jobs.append(job)

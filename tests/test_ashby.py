@@ -131,7 +131,8 @@ def test_ashby_source_fetches_job_descriptions(monkeypatch):
     jobs = AshbySource(config).fetch_jobs()
 
     assert len(jobs) == 1
-    assert jobs[0].description == "<p>Python APIs and PostgreSQL.</p>"
+    assert jobs[0].description == "Python APIs and PostgreSQL."
+    assert jobs[0].description_html == "<p>Python APIs and PostgreSQL.</p>"
 
 
 def test_fetch_ashby_descriptions_returns_descriptions_by_url(monkeypatch):

@@ -241,11 +241,11 @@ Each source adapter subclasses `JobSource` and returns a list of normalized `Job
 
 ## RSS
 
-RSS is broad and lightweight. It is also useful for discovery because RSS postings often link to company job pages.
+RSS is broad and lightweight. It is also useful for discovery because RSS postings often link to company job pages. RSS summaries are saved as provider HTML for email reports and as cleaned text for matching.
 
 ## RemoteOK
 
-RemoteOK has a public API. The source skips the metadata row and normalizes salary, tags, date, and job URL.
+RemoteOK has a public API. The source skips the metadata row and normalizes salary, tags, date, and job URL. Its description and tags are also shaped into email-friendly HTML while plain text remains available for scoring.
 
 ## Greenhouse
 
@@ -253,11 +253,11 @@ Greenhouse has a structured board API. The adapter loops through configured boar
 
 ## Lever
 
-Lever has a postings API. The adapter combines split fields like description, lists, and closing text into one description.
+Lever has a postings API. The adapter combines split fields like description, lists, and closing text into one cleaned description, and keeps the same sections as structured HTML for email reports.
 
 ## Ashby
 
-Ashby requires more parsing. The board page exposes listing data, and individual posting pages provide richer descriptions. The adapter fetches descriptions concurrently to keep runtime reasonable.
+Ashby requires more parsing. The board page exposes listing data, and individual posting pages provide richer descriptions. The adapter fetches descriptions concurrently to keep runtime reasonable, then stores cleaned text plus provider HTML when the posting exposes it.
 
 ---
 

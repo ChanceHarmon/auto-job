@@ -4,6 +4,7 @@ import httpx
 import json
 import re
 
+from auto_job.description_utils import clean_description
 from auto_job.models import Job
 from auto_job.sources.base import JobSource
 
@@ -173,7 +174,8 @@ class AshbySource(JobSource):
                     location=location,
                     remote_status=remote_status,
                     date_posted=published_date,
-                    description=description,
+                    description=clean_description(description),
+                    description_html=description,
                 )
                 jobs.append(job)
 

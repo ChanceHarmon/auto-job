@@ -5,6 +5,7 @@ from datetime import date
 from auto_job.config import AppConfig
 from auto_job.sources.remoteok import (
     RemoteOKSource,
+    build_remoteok_description_html,
     format_remoteok_salary,
     normalize_remoteok_job,
     parse_remoteok_date,
@@ -55,6 +56,19 @@ def test_normalize_remoteok_job_includes_tags_in_description():
     assert job.date_posted == date(2026, 6, 15)
     assert "Build APIs." in job.description
     assert "Tags: python, postgresql" in job.description
+    assert "<strong>Tags:</strong> python, postgresql" in job.description_html
+
+
+def test_build_remoteok_description_html_preserves_description_markup():
+    description_html = build_remoteok_description_html(
+        {
+            "description": "<p>Build <strong>APIs</strong>.</p>",
+            "tags": ["python"],
+        }
+    )
+
+    assert "<p>Build <strong>APIs</strong>.</p>" in description_html
+    assert "<strong>Tags:</strong> python" in description_html
 
 
 def test_remoteok_source_skips_metadata_row(monkeypatch):
