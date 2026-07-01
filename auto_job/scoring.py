@@ -1,7 +1,8 @@
-from auto_job.config import AppConfig
-from auto_job.models import Job
 from datetime import date, timedelta
 import re
+
+from auto_job.config import AppConfig
+from auto_job.models import Job
 
 
 US_LOCATION_TERMS = {
@@ -167,7 +168,7 @@ def score_job(job: Job, config: AppConfig) -> int:
             job.match_score = 0
             job.match_reasons = ["too old"]
             return 0
-    
+
     # Configured keywords represent broad search intent and count in both
     # full posting text and title text.
     for keyword in config.search.keywords:

@@ -270,7 +270,10 @@ def discover_company_sources(
 
         stale_sources = [
             result
-            for result in validate_sources(app_config, progress_callback=progress_callback)
+            for result in validate_sources(
+                app_config,
+                progress_callback=progress_callback,
+            )
             if result.provider in providers and is_prunable_source(result)
         ]
 

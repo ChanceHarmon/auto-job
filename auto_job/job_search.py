@@ -1,9 +1,10 @@
 from dataclasses import dataclass
+
 from rich import print
 
-from auto_job.sources.registry import SOURCE_REGISTRY
-from auto_job.scoring import score_job
 from auto_job.models import Job
+from auto_job.scoring import score_job
+from auto_job.sources.registry import SOURCE_REGISTRY
 from auto_job.storage import init_db, save_jobs
 
 
@@ -85,7 +86,9 @@ def score_and_filter_jobs(
         if score >= app_config.filters.minimum_score:
             matched_jobs.append(job)
             source_key = get_source_key(job)
-            source_match_counts[source_key] = source_match_counts.get(source_key, 0) + 1
+            source_match_counts[source_key] = (
+                source_match_counts.get(source_key, 0) + 1
+            )
         else:
             reason = get_filter_reason(
                 job,
@@ -120,7 +123,10 @@ def run_job_search(app_config) -> JobSearchResult:
     jobs, source_fetch_counts = fetch_jobs_from_sources(app_config)
 
     print("Scoring and filtering jobs...")
-    matched_jobs, source_match_counts, filter_counts = score_and_filter_jobs(jobs, app_config)
+    matched_jobs, source_match_counts, filter_counts = score_and_filter_jobs(
+        jobs,
+        app_config,
+    )
 
     print("Deduplicating matches...")
     matched_jobs = dedupe_jobs(matched_jobs)
@@ -130,7 +136,7 @@ def run_job_search(app_config) -> JobSearchResult:
     # first N jobs.
     matched_jobs.sort(
         key=lambda job: job.match_score,
-        reverse=True
+        reverse=True,
     )
 
     print("Saving matches to SQLite...")

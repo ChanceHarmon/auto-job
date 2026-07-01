@@ -14,28 +14,34 @@ class SearchConfig(BaseModel):
     salary_min: int | None = None
     recency_days: int = 7
 
+
 class FilterConfig(BaseModel):
-    excluded_keywords: list[str] = []
-    penalty_keywords: list[str] = []
-    preferred_titles: list[str] = []
-    preferred_stack: list[str] = []
+    excluded_keywords: list[str] = Field(default_factory=list)
+    penalty_keywords: list[str] = Field(default_factory=list)
+    preferred_titles: list[str] = Field(default_factory=list)
+    preferred_stack: list[str] = Field(default_factory=list)
     minimum_score: int = 40
+
 
 class RSSFeedConfig(BaseModel):
     name: str
     url: str
 
+
 class GreenhouseBoardConfig(BaseModel):
     company: str
     board_token: str
+
 
 class LeverCompanyConfig(BaseModel):
     company: str
     company_slug: str
 
+
 class AshbyCompanyConfig(BaseModel):
     company: str
     company_slug: str
+
 
 class SourceConfig(BaseModel):
     enabled: list[str] = Field(default_factory=list)
@@ -44,13 +50,13 @@ class SourceConfig(BaseModel):
     lever_companies: list[LeverCompanyConfig] = Field(default_factory=list)
     ashby_companies: list[AshbyCompanyConfig] = Field(default_factory=list)
 
+
 class EmailConfig(BaseModel):
     enabled: bool = False
     to: str | None = None
     from_email: str | None = None
     smtp_host: str = "smtp.gmail.com"
     smtp_port: int = 587
-
 
 
 class AppConfig(BaseModel):

@@ -70,10 +70,7 @@ def add_greenhouse_board(
 
     # Use the provider identifier as the dedupe key because company display
     # names can vary while board tokens/slugs are stable.
-    boards = config_data["sources"].setdefault(
-        "greenhouse_boards",
-        []
-    )
+    boards = config_data["sources"].setdefault("greenhouse_boards", [])
 
     already_exists = any(
         board["board_token"] == board_token
@@ -114,10 +111,7 @@ def add_ashby_company(
 
     # Ashby and Lever use company_slug rather than board_token, but the write
     # flow mirrors Greenhouse: read config, skip duplicates, append, write back.
-    companies = config_data["sources"].setdefault(
-        "ashby_companies",
-        []
-    )
+    companies = config_data["sources"].setdefault("ashby_companies", [])
 
     already_exists = any(
         existing["company_slug"] == company_slug
@@ -156,10 +150,7 @@ def add_lever_company(
     with open(config_path, "r", encoding="utf-8") as file:
         config_data = yaml.safe_load(file)
 
-    companies = config_data["sources"].setdefault(
-        "lever_companies",
-        []
-    )
+    companies = config_data["sources"].setdefault("lever_companies", [])
 
     already_exists = any(
         existing["company_slug"] == company_slug
@@ -195,13 +186,25 @@ def add_provider_source(
     """Add a detected ATS source to config.yaml."""
 
     if provider == "greenhouse":
-        return add_greenhouse_board(config_path, company_slug.title(), company_slug)
+        return add_greenhouse_board(
+            config_path,
+            company_slug.title(),
+            company_slug,
+        )
 
     if provider == "ashby":
-        return add_ashby_company(config_path, company_slug.title(), company_slug)
+        return add_ashby_company(
+            config_path,
+            company_slug.title(),
+            company_slug,
+        )
 
     if provider == "lever":
-        return add_lever_company(config_path, company_slug.title(), company_slug)
+        return add_lever_company(
+            config_path,
+            company_slug.title(),
+            company_slug,
+        )
 
     return False
 

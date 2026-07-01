@@ -16,7 +16,7 @@ class DemoSource(JobSource):
                 posting_url="https://example.com/backend",
                 location="Remote",
                 remote_status="remote",
-                description="Python, APIs, PostgreSQL"
+                description="Python, APIs, PostgreSQL",
             ),
             Job(
                 company="Another Company",
@@ -25,6 +25,6 @@ class DemoSource(JobSource):
                 posting_url="https://example.com/fullstack",
                 location="United States",
                 remote_status="hybrid",
-                description="React, TypeScript, Node"
-            )
+                description="React, TypeScript, Node",
+            ),
         ]

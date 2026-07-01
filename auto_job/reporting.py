@@ -67,7 +67,11 @@ def find_description_sections(description: str) -> list[tuple[str, str]]:
     sections = []
 
     for index, (start, end, heading) in enumerate(matches):
-        next_start = matches[index + 1][0] if index + 1 < len(matches) else len(description)
+        next_start = (
+            matches[index + 1][0]
+            if index + 1 < len(matches)
+            else len(description)
+        )
         body = description[end:next_start].strip(" :-")
 
         if body:
@@ -92,7 +96,11 @@ def extract_description_snippet(description: str) -> str:
         # Required/Responsibilities makes the email more actionable.
         start_index, _heading = min(heading_positions)
         snippet = description[start_index:start_index + DESCRIPTION_PREVIEW_LENGTH]
-        suffix = "..." if start_index + DESCRIPTION_PREVIEW_LENGTH < len(description) else ""
+        suffix = (
+            "..."
+            if start_index + DESCRIPTION_PREVIEW_LENGTH < len(description)
+            else ""
+        )
         return snippet + suffix
 
     if len(description) <= DESCRIPTION_PREVIEW_LENGTH:
