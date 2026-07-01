@@ -124,11 +124,14 @@ Current fields include:
 - salary
 - date_posted
 - description
+- description_html
 - detected_stack
 - match_reasons
 - match_score
 
 This creates a normalization boundary between external providers and internal application logic.
+
+`description` is the cleaned plain-text version used for scoring, filtering, and text reports. `description_html` is optional provider HTML that can be sanitized and reused in styled email reports when a source provides reliable markup.
 
 ---
 
@@ -220,6 +223,7 @@ Current implementation supports:
 - `.env`-based credential loading
 - Styled HTML email delivery with plain-text fallback
 - New/seen badges based on whether SQLite saved the job for the first time
+- Sanitized provider HTML descriptions when available, starting with Greenhouse postings
 
 ---
 

@@ -1,11 +1,28 @@
 from datetime import datetime
-from pathlib import Path
 from html import escape, unescape
+from html.parser import HTMLParser
+from pathlib import Path
 import re
 
+from auto_job.description_utils import clean_description
 from auto_job.models import Job
 
 DESCRIPTION_PREVIEW_LENGTH = 5000
+ALLOWED_DESCRIPTION_TAGS = {
+    "p",
+    "br",
+    "ul",
+    "ol",
+    "li",
+    "strong",
+    "b",
+    "em",
+    "i",
+    "h2",
+    "h3",
+    "h4",
+}
+SKIPPED_DESCRIPTION_TAGS = {"script", "style", "iframe", "form"}
 DESCRIPTION_SECTION_HEADINGS = [
     "required",
     "qualifications",
@@ -31,19 +48,65 @@ MATCH_REASON_LABELS = {
 }
 
 
-def clean_description(description: str) -> str:
-    # Provider descriptions often arrive as HTML or escaped HTML. Reports need
-    # readable text, so normalize tags/entities before snippet extraction.
-    for _ in range(2):
-        description = unescape(description)
+class DescriptionHTMLSanitizer(HTMLParser):
+    def __init__(self):
+        super().__init__(convert_charrefs=False)
+        self.parts: list[str] = []
+        # Some provider fields can include scripts or embedded widgets. Skip
+        # their full contents instead of only removing the wrapper tags.
+        self.skipped_tag_depth = 0
 
-    description = re.sub(r"<[^>]+>", " ", description)
-    description = description.replace("\xa0", " ")
-    description = description.replace("&", " and ")
-    description = re.sub(r"\b(?:nbsp|amp)\b", " ", description, flags=re.IGNORECASE)
-    description = " ".join(description.split())
+    def handle_starttag(self, tag: str, attrs):
+        tag = tag.lower()
 
-    return description
+        if tag in SKIPPED_DESCRIPTION_TAGS:
+            self.skipped_tag_depth += 1
+            return
+
+        if self.skipped_tag_depth:
+            return
+
+        if tag in ALLOWED_DESCRIPTION_TAGS:
+            self.parts.append(f"<{tag}>")
+
+    def handle_endtag(self, tag: str):
+        tag = tag.lower()
+
+        if tag in SKIPPED_DESCRIPTION_TAGS:
+            self.skipped_tag_depth = max(0, self.skipped_tag_depth - 1)
+            return
+
+        if self.skipped_tag_depth:
+            return
+
+        if tag in ALLOWED_DESCRIPTION_TAGS and tag != "br":
+            self.parts.append(f"</{tag}>")
+
+    def handle_data(self, data: str):
+        if not self.skipped_tag_depth:
+            self.parts.append(escape(data))
+
+    def handle_entityref(self, name: str):
+        if not self.skipped_tag_depth:
+            self.parts.append(escape(unescape(f"&{name};")))
+
+    def handle_charref(self, name: str):
+        if not self.skipped_tag_depth:
+            self.parts.append(escape(unescape(f"&#{name};")))
+
+    def get_html(self) -> str:
+        return "".join(self.parts).strip()
+
+
+def sanitize_description_html(description_html: str | None) -> str:
+    if not description_html:
+        return ""
+
+    sanitizer = DescriptionHTMLSanitizer()
+    sanitizer.feed(unescape(description_html))
+    sanitizer.close()
+
+    return sanitizer.get_html()
 
 
 def find_description_sections(description: str) -> list[tuple[str, str]]:
@@ -164,6 +227,45 @@ def format_match_summary_text(match_reasons: list[str]) -> list[str]:
     return lines
 
 
+def build_text_description_html(description: str | None) -> str:
+    if not description:
+        return ""
+
+    section_html = []
+
+    for heading, body in build_description_sections(description):
+        section_html.append(
+            "<section class=\"description-section\">"
+            f"<h3>{escape(heading)}</h3>"
+            f"<p>{escape(body)}</p>"
+            "</section>"
+        )
+
+    return "".join(section_html)
+
+
+def build_job_description_html(job: Job) -> str:
+    provider_html = sanitize_description_html(job.description_html)
+
+    if provider_html:
+        return (
+            "<div class=\"description provider-description\">"
+            f"{provider_html}"
+            "</div>"
+        )
+
+    text_description_html = build_text_description_html(job.description)
+
+    if not text_description_html:
+        return ""
+
+    return (
+        "<div class=\"description\">"
+        f"{text_description_html}"
+        "</div>"
+    )
+
+
 def build_text_report(jobs: list[Job], limit: int = 20) -> str:
     # Plain text remains useful as a local artifact and fallback email body.
     lines = []
@@ -229,11 +331,6 @@ def build_html_report(jobs: list[Job], limit: int = 20) -> str:
     for index, job in enumerate(jobs[:limit], start=1):
         badge_text = "New" if job.is_new else "Seen"
         badge_color = "#166534" if job.is_new else "#475569"
-        description = (
-            build_description_sections(job.description)
-            if job.description
-            else []
-        )
 
         stack_html = ""
         if job.detected_stack:
@@ -259,23 +356,7 @@ def build_html_report(jobs: list[Job], limit: int = 20) -> str:
                 f"<ul>{''.join(reason_items)}</ul></div>"
             )
 
-        description_html = ""
-        if description:
-            section_html = []
-
-            for heading, body in description:
-                section_html.append(
-                    "<section class=\"description-section\">"
-                    f"<h3>{escape(heading)}</h3>"
-                    f"<p>{escape(body)}</p>"
-                    "</section>"
-                )
-
-            description_html = (
-                "<div class=\"description\">"
-                f"{''.join(section_html)}"
-                "</div>"
-            )
+        description_html = build_job_description_html(job)
 
         cards.append(
             f"""
@@ -378,6 +459,24 @@ def build_html_report(jobs: list[Job], limit: int = 20) -> str:
           .description {{
             color: #1e293b;
             margin: 12px 0;
+          }}
+          .provider-description p {{
+            margin: 0 0 10px;
+          }}
+          .provider-description ul,
+          .provider-description ol {{
+            margin: 8px 0 12px 24px;
+            padding: 0;
+          }}
+          .provider-description li {{
+            margin: 0 0 6px;
+          }}
+          .provider-description h2,
+          .provider-description h3,
+          .provider-description h4 {{
+            color: #0f172a;
+            font-size: 17px;
+            margin: 14px 0 6px;
           }}
           .reason-block {{
             background: #f8fafc;

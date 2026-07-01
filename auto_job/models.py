@@ -21,6 +21,7 @@ class Job(BaseModel):
     salary: str | None = None
     date_posted: date | None = None
     description: str | None = None
+    description_html: str | None = None
 
     detected_stack: list[str] = Field(default_factory=list)
     match_reasons: list[str] = Field(default_factory=list)
