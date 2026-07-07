@@ -267,6 +267,51 @@ def test_matching_remote_job_gets_positive_score():
     assert "preferred stack: python" in job.match_reasons
 
 
+def test_keyword_phrase_scores_once_when_all_parts_match():
+    app_config = build_test_config()
+
+    job = Job(
+        company="Example Co",
+        title="Backend Platform Engineer",
+        source="test",
+        posting_url="https://example.com/job",
+        location="Remote",
+        remote_status="remote",
+        description=(
+            "Backend backend backend services for engineer productivity. "
+            "Python APIs PostgreSQL."
+        ),
+    )
+
+    score = score_job(job, app_config)
+
+    assert score == 50
+    assert job.match_reasons.count("keyword match: backend engineer") == 1
+    assert job.match_reasons.count("title match: backend engineer") == 1
+
+
+def test_keyword_phrase_does_not_match_single_generic_part():
+    app_config = build_test_config()
+
+    job = Job(
+        company="Example Co",
+        title="Customer Success Engineer",
+        source="test",
+        posting_url="https://example.com/job",
+        location="Remote",
+        remote_status="remote",
+        description="Support customer implementations with Python and PostgreSQL.",
+    )
+
+    score = score_job(job, app_config)
+
+    assert score == 20
+    assert "keyword match: backend engineer" not in job.match_reasons
+    assert "keyword match: software engineer" not in job.match_reasons
+    assert "title match: backend engineer" not in job.match_reasons
+    assert "title match: software engineer" not in job.match_reasons
+
+
 def test_penalty_keyword_reduces_score_without_excluding_job():
     app_config = build_test_config()
     app_config.filters.penalty_keywords = ["intern"]

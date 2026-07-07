@@ -46,6 +46,8 @@ CANADA_LOCATION_TERMS = {
 }
 
 IGNORED_LOCATION_TERMS = {"remote"}
+KEYWORD_POINTS = 10
+TITLE_KEYWORD_POINTS = 20
 TITLE_PENALTY_POINTS = 20
 PREFERRED_TITLE_POINTS = 20
 
@@ -82,6 +84,12 @@ def title_matches_keyword(title_text: str, keyword: str) -> bool:
             return True
 
     return False
+
+
+def text_matches_keyword(text: str, keyword: str) -> bool:
+    keyword_parts = keyword.lower().split()
+
+    return all(part in text for part in keyword_parts)
 
 
 def get_allowed_location_terms(config: AppConfig) -> set[str]:
@@ -169,29 +177,15 @@ def score_job(job: Job, config: AppConfig) -> int:
             job.match_reasons = ["too old"]
             return 0
 
-    # Configured keywords represent broad search intent and count in both
-    # full posting text and title text.
+    # Configured keyword phrases represent broad search intent. Each phrase can
+    # boost once in the full posting text and once in the title.
     for keyword in config.search.keywords:
-        keyword_parts = keyword.lower().split()
-
-        matches = sum(
-            1
-            for part in keyword_parts
-            if part in searchable_text
-        )
-
-        if matches > 0:
-            score += matches * 10
+        if text_matches_keyword(searchable_text, keyword):
+            score += KEYWORD_POINTS
             reasons.append(f"keyword match: {keyword}")
 
-        title_matches = sum(
-            1
-            for part in keyword_parts
-            if part in job.title.lower()
-        )
-
-        if title_matches > 0:
-            score += title_matches * 10
+        if text_matches_keyword(title_text, keyword):
+            score += TITLE_KEYWORD_POINTS
             reasons.append(f"title match: {keyword}")
 
     # Stack/title preferences and penalties tune ranking without changing the
